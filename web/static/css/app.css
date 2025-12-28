@@ -1364,7 +1364,7 @@ body {
     gap: var(--spacing-xs);
 }
 
-/* CodeMirror overrides */
+/* CodeMirror Custom Theme - Matches App Theme */
 .CodeMirror {
     height: auto;
     min-height: 400px;
@@ -1374,57 +1374,155 @@ body {
     line-height: 1.6;
     border: none;
     border-top: 1px solid var(--border-color);
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
 }
 
 .CodeMirror-scroll {
     max-height: 600px;
     overflow-y: auto;
     overflow-x: auto;
+    background: var(--bg-primary);
 }
 
 .CodeMirror-gutters {
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
+    background: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border-color) !important;
 }
 
 .CodeMirror-linenumber {
-    color: var(--text-muted);
+    color: var(--text-muted) !important;
+    padding: 0 8px 0 4px;
 }
 
 .CodeMirror-cursor {
-    border-left: 1px solid var(--text-primary);
+    border-left: 2px solid var(--primary) !important;
 }
 
-/* Dark theme CodeMirror */
-[data-theme="dark"] .CodeMirror {
-    background: var(--bg-primary);
+.CodeMirror-selected {
+    background: var(--primary-light) !important;
+    opacity: 0.2;
+}
+
+.CodeMirror-focused .CodeMirror-selected {
+    background: var(--primary-light) !important;
+    opacity: 0.3;
+}
+
+/* YAML Syntax Highlighting - Light Theme */
+.CodeMirror .cm-keyword {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.CodeMirror .cm-atom {
+    color: var(--info);
+}
+
+.CodeMirror .cm-number {
+    color: var(--primary-dark);
+}
+
+.CodeMirror .cm-string {
+    color: var(--success);
+}
+
+.CodeMirror .cm-comment {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.CodeMirror .cm-variable {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .CodeMirror-gutters {
-    background: var(--bg-secondary);
-    border-right-color: var(--border-color);
+.CodeMirror .cm-variable-2 {
+    color: var(--primary);
 }
 
-[data-theme="dark"] .CodeMirror-linenumber {
+.CodeMirror .cm-property {
+    color: var(--primary-dark);
+}
+
+.CodeMirror .cm-operator {
+    color: var(--text-secondary);
+}
+
+.CodeMirror .cm-meta {
+    color: var(--warning);
+}
+
+/* Dark Theme YAML Syntax Highlighting */
+[data-theme="dark"] .CodeMirror .cm-keyword {
+    color: #7ab3d4; /* Lighter primary for dark theme */
+}
+
+[data-theme="dark"] .CodeMirror .cm-atom {
+    color: #60a5fa; /* Lighter info for dark theme */
+}
+
+[data-theme="dark"] .CodeMirror .cm-number {
+    color: #5a9bc4; /* Primary light */
+}
+
+[data-theme="dark"] .CodeMirror .cm-string {
+    color: #34d399; /* Success green */
+}
+
+[data-theme="dark"] .CodeMirror .cm-comment {
     color: var(--text-muted);
 }
 
-/* CodeMirror monokai theme adjustments for dark mode */
-[data-theme="dark"] .CodeMirror.cm-s-monokai {
-    background: #272822;
-    color: #f8f8f2;
+[data-theme="dark"] .CodeMirror .cm-variable {
+    color: var(--text-primary);
 }
 
-[data-theme="dark"] .CodeMirror.cm-s-monokai .CodeMirror-gutters {
-    background: #272822;
-    border-right-color: #3e3d32;
+[data-theme="dark"] .CodeMirror .cm-variable-2 {
+    color: #7ab3d4;
 }
 
-[data-theme="dark"] .CodeMirror.cm-s-monokai .CodeMirror-linenumber {
-    color: #75715e;
+[data-theme="dark"] .CodeMirror .cm-property {
+    color: #5a9bc4;
+}
+
+[data-theme="dark"] .CodeMirror .cm-operator {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .CodeMirror .cm-meta {
+    color: #fbbf24; /* Warning yellow */
+}
+
+/* CodeMirror Scrollbar Styling */
+.CodeMirror-scrollbar-filler {
+    background: var(--bg-primary);
+}
+
+.CodeMirror-vscrollbar,
+.CodeMirror-hscrollbar {
+    outline: none;
+}
+
+.CodeMirror-vscrollbar::-webkit-scrollbar,
+.CodeMirror-hscrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.CodeMirror-vscrollbar::-webkit-scrollbar-track,
+.CodeMirror-hscrollbar::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.CodeMirror-vscrollbar::-webkit-scrollbar-thumb,
+.CodeMirror-hscrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.CodeMirror-vscrollbar::-webkit-scrollbar-thumb:hover,
+.CodeMirror-hscrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .btn-sm {
@@ -1482,16 +1580,13 @@ body {
 
 /* Installation Section */
 .installation-section {
-    margin-top: var(--spacing-xl);
-    padding-top: var(--spacing-xl);
-    border-top: 1px solid var(--border-color);
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .installation-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--spacing-lg);
+    display: none; /* Removed redundant header - title is in main tab */
 }
 
 .section-subtitle {
@@ -1514,7 +1609,7 @@ body {
 .installation-tabs {
     display: flex;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
     border-bottom: 2px solid var(--border-color);
 }
 
@@ -1562,17 +1657,22 @@ body {
 .install-step {
     display: flex;
     gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
     padding: var(--spacing-lg);
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     transition: var(--transition);
+}
+
+.install-step:last-child {
+    margin-bottom: 0;
 }
 
 .install-step:hover {
     border-color: var(--primary-light);
     box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
 }
 
 .step-number {

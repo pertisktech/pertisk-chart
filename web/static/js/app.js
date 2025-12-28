@@ -617,19 +617,13 @@ function renderChartDetailContent(chart) {
                     `
                 }
             </ul>
-        </div>
-        
-        <div class="installation-section">
-            <div class="installation-header">
-                <h3 class="section-subtitle">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
-                        <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                    </svg>
-                    Installation Instructions
-                </h3>
+                </div>
             </div>
             
-            <div class="installation-tabs">
+            <!-- Installation Tab Content -->
+            <div class="chart-detail-tab-content" id="chart-detail-installation">
+                <div class="installation-section">
+                    <div class="installation-tabs">
                 <button class="install-tab active" data-tab="quick" onclick="switchInstallTab('quick')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -842,7 +836,7 @@ function renderChartDetailContent(chart) {
                         <p class="step-hint">Create a <code>values.yaml</code> file with your custom configuration</p>
                     </div>
                 </div>
-            </div>
+                    </div>
                 </div>
             </div>
             
@@ -1032,14 +1026,10 @@ async function loadDefaultValues(chartName, version) {
                 textarea.cmEditor.toTextArea();
             }
             
-            // Get current theme
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-            const cmTheme = currentTheme === 'dark' ? 'monokai' : 'default';
-            
-            // Create new CodeMirror instance
+            // Create new CodeMirror instance (no theme, we'll style with CSS)
             const editor = CodeMirror.fromTextArea(textarea, {
                 mode: 'yaml',
-                theme: cmTheme,
+                theme: 'none', // Use custom CSS styling instead
                 lineNumbers: true,
                 lineWrapping: true,
                 readOnly: true,
@@ -1975,7 +1965,7 @@ function switchInstallTab(tabName) {
         content.classList.remove('active');
     });
     
-    // Remove active class from all tabs
+    // Remove active class from all install tabs (only install tabs, not chart detail tabs)
     document.querySelectorAll('.install-tab').forEach(tab => {
         tab.classList.remove('active');
     });
@@ -1986,8 +1976,8 @@ function switchInstallTab(tabName) {
         targetContent.classList.add('active');
     }
     
-    // Add active class to clicked tab
-    const clickedTab = document.querySelector(`[data-tab="${tabName}"]`);
+    // Add active class to clicked tab (only search within install tabs)
+    const clickedTab = document.querySelector(`.install-tab[data-tab="${tabName}"]`);
     if (clickedTab) {
         clickedTab.classList.add('active');
     }
@@ -2405,8 +2395,7 @@ function updateCodeMirrorThemes(theme) {
     textareas.forEach(textarea => {
         if (textarea.cmEditor) {
             const editor = textarea.cmEditor;
-            const newTheme = theme === 'dark' ? 'monokai' : 'default';
-            editor.setOption('theme', newTheme);
+            // Keep theme as 'none' since we use CSS variables
             editor.refresh();
         }
     });
