@@ -44,13 +44,13 @@
                 <h2>Quick Start</h2>
                 <div class="code-block">
                     <h3>Add this repository to Helm:</h3>
-                    <pre><code>helm repo add pertisk http://localhost:8080
+                    <pre><code>helm repo add pertisk http://localhost:7080
 helm repo update</code></pre>
                 </div>
                 
                 <div class="code-block">
                     <h3>Upload a chart:</h3>
-                    <pre><code>curl -X POST http://localhost:8080/api/charts \
+                    <pre><code>curl -X POST http://localhost:7080/api/charts \
   -F "chart=@mychart-1.0.0.tgz"</code></pre>
                 </div>
                 

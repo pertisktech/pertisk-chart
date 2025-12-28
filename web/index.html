@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pertisk Chart Repository - Helm Charts</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation Header -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="/" class="nav-brand" onclick="event.preventDefault(); showView('home'); return false;" style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="brand-text">Pertisk Charts</span>
+                </a>
+                <div class="nav-links" style="display: flex; gap: var(--spacing-md); align-items: center;">
+                    <a href="/charts" onclick="event.preventDefault(); showView('charts'); return false;" class="nav-link-item">Browse</a>
+                    <a href="/my-charts" id="myChartsLink" onclick="event.preventDefault(); showView('myCharts'); return false;" class="nav-link-item" style="display: none;">My Charts</a>
+                    <a href="/admin" id="adminLink" onclick="event.preventDefault(); showView('admin'); return false;" class="nav-link-item" style="display: none;">Admin</a>
+                </div>
+                <div class="nav-search">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search charts...">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
+                <div class="nav-actions">
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+                        <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg id="themeIconDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    
+                    <div id="authButtons" style="display: flex; gap: var(--spacing-sm);">
+                        <button class="btn-secondary" id="loginBtn">Login</button>
+                        <button class="btn-primary" id="registerBtn">Register</button>
+                    </div>
+                    <div id="userMenu" style="display: none; align-items: center; gap: var(--spacing-sm);">
+                        <span id="usernameDisplay" style="font-size: var(--font-size-sm); color: var(--text-secondary);"></span>
+                        <button class="btn-upload" id="uploadBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload Chart
+                        </button>
+                        <button class="btn-secondary" id="logoutBtn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-container">
+                <!-- Hero Section -->
+                <section class="hero-section" id="homeView">
+                    <div class="hero-content">
+                        <h1 class="hero-title">Discover and Deploy Helm Charts</h1>
+                        <p class="hero-subtitle">Find, install, and manage Kubernetes applications with ease</p>
+                        <div class="hero-stats">
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalCharts">0</span>
+                                <span class="stat-label">Charts</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalVersions">0</span>
+                                <span class="stat-label">Versions</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Grid -->
+                <section class="charts-section" id="chartsView" style="display: none;">
+                    <div class="section-header">
+                        <h2 class="section-title">Available Charts</h2>
+                        <div class="filters">
+                            <select id="sortSelect" class="filter-select">
+                                <option value="name">Sort by Name</option>
+                                <option value="recent">Most Recent</option>
+                                <option value="versions">Most Versions</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="chartsGrid" class="charts-grid">
+                        <!-- Charts will be loaded here -->
+                    </div>
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <h3>No charts found</h3>
+                        <p>Upload your first chart to get started</p>
+                    </div>
+                </section>
+
+                <!-- My Charts Management View -->
+                <section class="charts-management-section" id="myChartsView" style="display: none;">
+                    <div class="section-header">
+                        <h2 class="section-title">My Charts</h2>
+                        <div class="management-actions">
+                            <button class="btn-primary" onclick="showModal('uploadModal')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 4px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Upload Chart
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-stats" id="chartsStats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="myTotalCharts">0</div>
+                            <div class="stat-label">Total Charts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="myTotalVersions">0</div>
+                            <div class="stat-label">Total Versions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="myLatestUpload">-</div>
+                            <div class="stat-label">Latest Upload</div>
+                        </div>
+                    </div>
+
+                    <div class="management-filters">
+                        <input type="text" id="managementSearch" class="search-input" placeholder="Search my charts..." style="max-width: 400px;">
+                        <select id="managementSort" class="filter-select">
+                            <option value="name">Sort by Name</option>
+                            <option value="recent">Most Recent</option>
+                            <option value="versions">Most Versions</option>
+                            <option value="size">Largest</option>
+                        </select>
+                    </div>
+
+                    <div id="myChartsGrid" class="charts-grid">
+                        <!-- My charts will be loaded here -->
+                    </div>
+                    <div id="myChartsEmpty" class="empty-state" style="display: none;">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <h3>No charts uploaded yet</h3>
+                        <p>Upload your first chart to get started</p>
+                        <button class="btn-primary" onclick="showModal('uploadModal')" style="margin-top: var(--spacing-md);">Upload Chart</button>
+                    </div>
+                </section>
+
+                <!-- Chart Detail View -->
+                <section class="chart-detail-section" id="chartDetailView" style="display: none;">
+                    <!-- Will be populated by JavaScript -->
+                </section>
+
+                <!-- Admin Configuration View -->
+                <section class="admin-section" id="adminView" style="display: none;">
+                    <div class="admin-container">
+                        <h2 class="admin-title">Admin Configuration</h2>
+                        
+                        <div class="admin-tabs">
+                            <button class="admin-tab active" data-tab="system" onclick="switchAdminTab('system')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                System Settings
+                            </button>
+                            <button class="admin-tab" data-tab="domain" onclick="switchAdminTab('domain')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                Domain Settings
+                            </button>
+                            <button class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                User Management
+                            </button>
+                        </div>
+
+                        <!-- System Settings Tab -->
+                        <div class="admin-tab-content active" id="admin-system">
+                            <div class="admin-card">
+                                <h3 class="admin-card-title">System Configuration</h3>
+                                <p class="admin-card-description">Configure general system settings for your Helm chart repository.</p>
+                                <form id="systemForm" class="admin-form">
+                                    <div class="form-group">
+                                        <label for="siteNameInput" class="form-label">Site Name</label>
+                                        <input type="text" id="siteNameInput" class="form-input" placeholder="Pertisk Charts" maxlength="100">
+                                        <small class="form-hint">The name displayed in the navigation and page title</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="siteDescriptionInput" class="form-label">Site Description</label>
+                                        <textarea id="siteDescriptionInput" class="form-input" rows="3" placeholder="A Helm chart repository for your applications" maxlength="500"></textarea>
+                                        <small class="form-hint">Brief description of your chart repository</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="repositoryNameInput" class="form-label">Repository Name</label>
+                                        <input type="text" id="repositoryNameInput" class="form-input" placeholder="pertisk" maxlength="50">
+                                        <small class="form-hint">The name used in Helm commands (e.g., helm repo add pertisk ...)</small>
+                                    </div>
+                                    
+                                    <div id="systemStatus" class="upload-status"></div>
+                                    <button type="submit" class="btn-primary">Save Settings</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Domain Configuration Tab -->
+                        <div class="admin-tab-content" id="admin-domain">
+                            <div class="admin-card">
+                                <h3 class="admin-card-title">Repository Domain</h3>
+                                <p class="admin-card-description">Configure the domain URL for your Helm repository. This will be used in installation instructions and chart downloads.</p>
+                                <form id="domainForm" class="admin-form">
+                                    <div class="form-group">
+                                        <label for="domainInput" class="form-label">Domain URL</label>
+                                        <input type="url" id="domainInput" class="form-input" placeholder="https://charts.example.com" required>
+                                        <small class="form-hint">Include protocol (http:// or https://) and port if needed. Example: https://charts.example.com or http://localhost:7080</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Current Configuration</label>
+                                        <div class="config-preview">
+                                            <div class="config-preview-item">
+                                                <span class="config-preview-label">Repository URL:</span>
+                                                <code id="repoUrlPreview" class="config-preview-value">http://localhost:7080</code>
+                                            </div>
+                                            <div class="config-preview-item">
+                                                <span class="config-preview-label">Helm Command:</span>
+                                                <code id="helmCommandPreview" class="config-preview-value">helm repo add pertisk http://localhost:7080</code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="domainStatus" class="upload-status"></div>
+                                    <button type="submit" class="btn-primary">Save Domain</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- User Management Tab -->
+                        <div class="admin-tab-content" id="admin-users">
+                            <div class="admin-card">
+                                <h3 class="admin-card-title">User Management</h3>
+                                <p class="admin-card-description">Manage users and their admin privileges.</p>
+                                <div id="usersList" class="users-list">
+                                    <div class="loading-state">Loading users...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Login</h3>
+                    <button class="modal-close" id="closeLoginModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginUsername" class="form-label">Username</label>
+                            <input type="text" id="loginUsername" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" id="loginPassword" class="form-input" required>
+                        </div>
+                        <div id="loginStatus" class="upload-status"></div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" id="cancelLogin">Cancel</button>
+                            <button type="submit" class="btn-primary">Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Modal -->
+        <div id="registerModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Register</h3>
+                    <button class="modal-close" id="closeRegisterModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="registerUsername" class="form-label">Username</label>
+                            <input type="text" id="registerUsername" class="form-input" required minlength="3">
+                        </div>
+                        <div class="form-group">
+                            <label for="registerEmail" class="form-label">Email</label>
+                            <input type="email" id="registerEmail" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword" class="form-label">Password</label>
+                            <input type="password" id="registerPassword" class="form-input" required minlength="6">
+                        </div>
+                        <div id="registerStatus" class="upload-status"></div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" id="cancelRegister">Cancel</button>
+                            <button type="submit" class="btn-primary">Register</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="uploadModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Upload Chart</h3>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="chartFile" class="form-label">Select Chart Package (.tgz)</label>
+                            <input type="file" id="chartFile" name="chart" accept=".tgz" required class="form-input">
+                        </div>
+                        <div id="uploadStatus" class="upload-status"></div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" id="cancelUpload">Cancel</button>
+                            <button type="submit" class="btn-primary">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
+

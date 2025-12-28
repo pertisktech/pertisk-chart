@@ -39,21 +39,21 @@ go build -o pertisk-chart ./cmd/server
 
 4. Run the server:
 ```bash
-./pertisk-chart --port=8080 --storage-local-rootdir=./chartstorage
+./pertisk-chart --port=7080 --storage-local-rootdir=./chartstorage
 ```
 
 Or run directly with Go:
 ```bash
-go run ./cmd/server --port=8080 --storage-local-rootdir=./chartstorage
+go run ./cmd/server --port=7080 --storage-local-rootdir=./chartstorage
 ```
 
 ### Usage
 
-1. **Access the Web UI**: Open http://localhost:8080 in your browser
+1. **Access the Web UI**: Open http://localhost:7080 in your browser
 
 2. **Add repository to Helm**:
 ```bash
-helm repo add pertisk http://localhost:8080
+helm repo add pertisk http://localhost:7080
 helm repo update
 ```
 
@@ -61,11 +61,11 @@ helm repo update
 ```bash
 # Via UI: Navigate to /charts and use the upload form
 # Via API:
-curl -X POST http://localhost:8080/api/charts \
+curl -X POST http://localhost:7080/api/charts \
   -F "chart=@mychart-1.0.0.tgz"
 ```
 
-4. **Browse charts**: Visit http://localhost:8080/charts
+4. **Browse charts**: Visit http://localhost:7080/charts
 
 5. **Search and install charts**:
 ```bash
@@ -95,9 +95,17 @@ helm install myapp pertisk/mychart
 
 Command-line flags:
 
-- `--port` - Port to listen on (default: "8080")
+- `--port` - Port to listen on (default: "7080")
+- `--enable-http3` - Enable HTTP/3 support (requires TLS certificates)
+- `--tls-cert` - Path to TLS certificate file (required for HTTP/3)
+- `--tls-key` - Path to TLS private key file (required for HTTP/3)
+- `--enable-zstd` - Enable zstd compression (default: true)
 - `--storage` - Storage backend (default: "local")
 - `--storage-local-rootdir` - Local storage root directory (default: "./chartstorage")
+- `--data-dir` - Data directory for user storage (default: "./data")
+- `--db-type` - Database type: sqlite, postgres, or file (default: "sqlite")
+- `--db-dsn` - Database connection string (DSN). For SQLite: file path (default: ./data/users.db). For PostgreSQL: connection string
+- `--jwt-secret` - JWT secret key (or set JWT_SECRET env var)
 - `--enable-metrics` - Enable Prometheus metrics (default: false)
 - `--debug` - Enable debug mode (default: false)
 
@@ -133,8 +141,28 @@ pertisk-chart/
 ### Running in Development Mode
 
 ```bash
-go run ./cmd/server --debug --port=8080
+go run ./cmd/server --debug --port=7080
 ```
+
+### Hot Reload with Air
+
+For a better development experience with automatic reloading on file changes:
+
+1. **Install Air** (if not already installed):
+```bash
+make install-air
+# or
+go install github.com/air-verse/air@latest
+```
+
+2. **Run with hot reload**:
+```bash
+make run-dev
+# or
+air
+```
+
+Air will automatically rebuild and restart the server when you modify any `.go` or `.html` files. The configuration is in `.air.toml`.
 
 ### Building for Production
 
@@ -152,7 +180,7 @@ helm package test-chart
 
 Upload it:
 ```bash
-curl -X POST http://localhost:8080/api/charts -F "chart=@test-chart-0.1.0.tgz"
+curl -X POST http://localhost:7080/api/charts -F "chart=@test-chart-0.1.0.tgz"
 ```
 
 ## Features Similar to ChartMuseum
@@ -166,10 +194,128 @@ curl -X POST http://localhost:8080/api/charts -F "chart=@test-chart-0.1.0.tgz"
 - ✅ Chart metadata parsing
 - ✅ Multiple chart versions support
 
+## HTTP/3 and Compression Support
+
+### HTTP/3 Support
+
+The server supports HTTP/3 (QUIC) for improved performance and lower latency. To enable HTTP/3:
+
+```bash
+./pertisk-chart \
+  --enable-http3 \
+  --tls-cert=/path/to/cert.pem \
+  --tls-key=/path/to/key.pem \
+  --port=7080
+```
+
+**Note:** HTTP/3 requires TLS certificates. The server will fall back to HTTP/1.1 and HTTP/2 if HTTP/3 is not enabled or certificates are not provided.
+
+### Zstandard (zstd) Compression
+
+Zstd compression is enabled by default and automatically compresses responses when clients support it. The server supports multiple compression algorithms in order of preference:
+
+1. zstd (Zstandard) - Best compression ratio and speed
+2. brotli - Good compression ratio
+3. gzip - Widely supported
+4. deflate - Fallback option
+
+Compression is automatically negotiated based on the client's `Accept-Encoding` header.
+
+To disable compression:
+```bash
+./pertisk-chart --enable-zstd=false
+```
+
+## Authentication and Admin Setup
+
+### Creating an Admin User
+
+To access admin features (domain configuration, user management), you need to create an admin user. You can do this using the provided CLI tool:
+
+**Using Make:**
+```bash
+make create-admin USERNAME=admin EMAIL=admin@example.com PASSWORD=your-secure-password
+```
+
+**Or directly with Go:**
+```bash
+go run cmd/create-admin/main.go \
+  -username admin \
+  -email admin@example.com \
+  -password your-secure-password \
+  -db-type sqlite \
+  -data-dir ./data
+```
+
+**For PostgreSQL:**
+```bash
+go run cmd/create-admin/main.go \
+  -username admin \
+  -email admin@example.com \
+  -password your-secure-password \
+  -db-type postgres \
+  -db-dsn "host=localhost user=postgres password=secret dbname=pertisk port=5432 sslmode=disable"
+```
+
+**Note:** If the user already exists, the command will promote them to admin instead of creating a new user.
+
+### User Registration
+
+Regular users can register through the web UI by clicking "Register" in the navigation bar. Regular users can:
+- Upload charts
+- View and manage their own charts
+- Download charts
+
+Only admin users can:
+- Access admin configuration panel
+- Configure domain settings
+- Manage all users
+- Set admin privileges
+
+## Database Configuration
+
+The server supports multiple database backends for user management:
+
+### SQLite (Default)
+
+SQLite is the default database and requires no additional setup:
+
+```bash
+./pertisk-chart --db-type=sqlite --db-dsn=./data/users.db
+```
+
+Or use the default location:
+```bash
+./pertisk-chart  # Uses ./data/users.db by default
+```
+
+### PostgreSQL
+
+For PostgreSQL, provide a connection string:
+
+```bash
+./pertisk-chart \
+  --db-type=postgres \
+  --db-dsn="host=localhost user=postgres password=secret dbname=pertisk port=5432 sslmode=disable"
+```
+
+Or use the `DATABASE_URL` environment variable:
+```bash
+export DATABASE_URL="postgres://user:password@localhost:5432/pertisk?sslmode=disable"
+./pertisk-chart --db-type=postgres
+```
+
+### File-based (Legacy)
+
+For backward compatibility, file-based storage is still supported:
+
+```bash
+./pertisk-chart --db-type=file --data-dir=./data
+```
+
 ## Future Enhancements
 
 - [ ] Cloud storage backends (S3, GCS, Azure)
-- [ ] Authentication and authorization
 - [ ] Multi-tenancy support
 - [ ] Chart signing and verification
 - [ ] Prometheus metrics

@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -14,9 +15,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pertisk-tech/pertisk-chart/pkg/auth"
 	"github.com/pertisk-tech/pertisk-chart/pkg/chart"
 	"github.com/pertisk-tech/pertisk-chart/pkg/storage"
-	"gopkg.in/yaml.v3"
+	"github.com/quic-go/quic-go/http3"
 )
 
 // Config holds server configuration
@@ -24,84 +26,176 @@ type Config struct {
 	Port          string
 	EnableMetrics bool
 	Debug         bool
+	EnableHTTP3   bool
+	TLSCertFile   string
+	TLSKeyFile    string
+	EnableZstd    bool
 }
 
 // Server represents the API server
 type Server struct {
-	storage storage.Storage
-	config  *Config
-	router  *gin.Engine
+	storage    storage.Storage
+	userStore  auth.UserStore
+	configStore auth.ConfigStore
+	config      *Config
+	router      *gin.Engine
 }
 
 // NewServer creates a new API server
-func NewServer(store storage.Storage, config *Config) *Server {
+func NewServer(store storage.Storage, userStore auth.UserStore, configStore auth.ConfigStore, config *Config) *Server {
 	if !config.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	server := &Server{
-		storage: store,
-		config:  config,
-		router:  gin.Default(),
+		storage:     store,
+		userStore:   userStore,
+		configStore: configStore,
+		config:      config,
+		router:      gin.Default(),
 	}
 
 	server.setupRoutes()
 	return server
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server (HTTP/1.1, HTTP/2, and optionally HTTP/3)
 func (s *Server) Start(addr string) error {
-	return http.ListenAndServe(addr, s.router)
+	handler := http.Handler(s.router)
+
+	// Apply zstd compression if enabled
+	if s.config.EnableZstd {
+		compressedHandler, err := GetCompressedHandler(handler)
+		if err != nil {
+			log.Printf("Warning: Failed to enable compression: %v", err)
+		} else {
+			handler = compressedHandler
+		}
+	}
+
+	// Start HTTP/3 server if enabled and TLS certs are provided
+	if s.config.EnableHTTP3 && s.config.TLSCertFile != "" && s.config.TLSKeyFile != "" {
+		return s.startHTTP3(addr, handler)
+	}
+
+	// Start regular HTTP/1.1 and HTTP/2 server
+	return http.ListenAndServe(addr, handler)
+}
+
+// startHTTP3 starts an HTTP/3 server (requires TLS certificates)
+func (s *Server) startHTTP3(addr string, handler http.Handler) error {
+	// Load TLS certificate and key
+	cert, err := tls.LoadX509KeyPair(s.config.TLSCertFile, s.config.TLSKeyFile)
+	if err != nil {
+		return fmt.Errorf("failed to load TLS certificates: %w", err)
+	}
+
+	// Configure TLS for HTTP/3
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		NextProtos:   []string{"h3", "h2", "http/1.1"},
+	}
+
+	// Create HTTP/3 server
+	server := &http3.Server{
+		Addr:      addr,
+		Handler:   handler,
+		TLSConfig: tlsConfig,
+	}
+
+	log.Printf("Starting HTTP/3 server on %s", addr)
+	return server.ListenAndServe()
 }
 
 // setupRoutes configures all API routes
 func (s *Server) setupRoutes() {
-	// Serve static files (UI)
+	// Serve static files (UI assets)
 	s.router.Static("/static", "./web/static")
-	s.router.LoadHTMLGlob("web/templates/*")
-	
-	// Web UI routes
-	s.router.GET("/", s.handleIndex)
-	s.router.GET("/charts", s.handleChartsPage)
-	
+
 	// API routes
 	api := s.router.Group("/api")
 	{
+		// Public routes
 		api.GET("/health", s.handleHealth)
 		api.GET("/charts", s.handleListCharts)
 		api.GET("/charts/:name", s.handleGetChart)
 		api.GET("/charts/:name/:version", s.handleGetChartVersion)
-		api.POST("/charts", s.handleUploadChart)
-		api.DELETE("/charts/:name/:version", s.handleDeleteChart)
+		
+		// Authentication routes
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", s.handleRegister)
+			auth.POST("/login", s.handleLogin)
+			auth.GET("/me", s.AuthMiddleware(), s.handleGetMe)
+		}
+		
+		// Protected routes (require authentication)
+		protected := api.Group("")
+		protected.Use(s.AuthMiddleware())
+		{
+			protected.POST("/charts", s.handleUploadChart)
+			protected.DELETE("/charts/:name/:version", s.handleDeleteChart)
+		}
+
+		// Admin routes (require admin authentication)
+		admin := api.Group("/admin")
+		admin.Use(s.AdminMiddleware())
+		{
+			admin.GET("/config", s.handleGetConfig)
+			admin.GET("/config/:key", s.handleGetConfig)
+			admin.POST("/config", s.handleSetConfig)
+			admin.GET("/users", s.handleListUsers)
+			admin.PUT("/users/:id", s.handleUpdateUser)
+		}
+
+		// Public config endpoint (for domain)
+		api.GET("/config/domain", s.handleGetDomain)
 	}
-	
+
 	// Helm repository index
 	s.router.GET("/index.yaml", s.handleIndexYAML)
 	
 	// Chart download
 	s.router.GET("/charts/:name/:version/:filename", s.handleDownloadChart)
-}
-
-// handleIndex serves the main UI page
-func (s *Server) handleIndex(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.html", gin.H{
-		"title": "Pertisk Chart Repository",
-	})
-}
-
-// handleChartsPage serves the charts listing page
-func (s *Server) handleChartsPage(c *gin.Context) {
-	charts, err := s.getChartsList()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
 	
-	c.HTML(http.StatusOK, "charts.html", gin.H{
-		"title":  "Charts",
-		"charts": charts,
+	// Catch-all for SPA routing - serve index.html for all non-API routes
+	s.router.NoRoute(func(c *gin.Context) {
+		// Don't serve index.html for API routes, static files, index.yaml, or chart downloads
+		path := c.Request.URL.Path
+		
+		// Exclude API routes
+		if strings.HasPrefix(path, "/api") {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		
+		// Exclude static files
+		if strings.HasPrefix(path, "/static") {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		
+		// Exclude index.yaml
+		if path == "/index.yaml" {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		
+		// Exclude chart downloads (pattern: /charts/:name/:version/:filename - 3 path segments)
+		// But allow client-side routes like /charts or /charts/:name (1 or 2 segments)
+		if strings.HasPrefix(path, "/charts/") {
+			// Count path segments after /charts/
+			parts := strings.Split(strings.TrimPrefix(path, "/charts/"), "/")
+			// If it has 3 segments (name/version/filename), it's a chart download - return 404
+			// Otherwise, it's a client-side route - serve index.html
+			if len(parts) == 3 {
+				c.Status(http.StatusNotFound)
+				return
+			}
+		}
+		
+		// Serve index.html for all other routes (client-side routing)
+		c.File("./web/index.html")
 	})
 }
 
@@ -130,7 +224,7 @@ func (s *Server) handleGetChart(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	var chartInfo *ChartInfo
 	for _, ch := range charts {
 		if ch.Name == name {
@@ -138,12 +232,12 @@ func (s *Server) handleGetChart(c *gin.Context) {
 			break
 		}
 	}
-	
+
 	if chartInfo == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, chartInfo)
 }
 
@@ -151,13 +245,13 @@ func (s *Server) handleGetChart(c *gin.Context) {
 func (s *Server) handleGetChartVersion(c *gin.Context) {
 	name := c.Param("name")
 	version := c.Param("version")
-	
+
 	charts, err := s.getChartsList()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	for _, ch := range charts {
 		if ch.Name == name {
 			for _, v := range ch.Versions {
@@ -168,7 +262,7 @@ func (s *Server) handleGetChartVersion(c *gin.Context) {
 			}
 		}
 	}
-	
+
 	c.JSON(http.StatusNotFound, gin.H{"error": "chart version not found"})
 }
 
@@ -179,13 +273,13 @@ func (s *Server) handleUploadChart(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no chart file provided"})
 		return
 	}
-	
+
 	// Validate filename
 	if !strings.HasSuffix(file.Filename, ".tgz") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chart file: must be .tgz"})
 		return
 	}
-	
+
 	// Open uploaded file
 	src, err := file.Open()
 	if err != nil {
@@ -193,33 +287,33 @@ func (s *Server) handleUploadChart(c *gin.Context) {
 		return
 	}
 	defer src.Close()
-	
+
 	// Read file into memory for parsing and storage
 	fileData, err := io.ReadAll(src)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Parse chart metadata
 	chartData, err := chart.ParseChartFromTarball(bytes.NewReader(fileData))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse chart: %v", err)})
 		return
 	}
-	
+
 	// Generate filename: name-version.tgz
 	filename := fmt.Sprintf("%s-%s.tgz", chartData.Name, chartData.Version)
-	
+
 	// Store chart
 	if err := s.storage.PutChart(filename, bytes.NewReader(fileData)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, gin.H{
-		"saved": true,
-		"name":  chartData.Name,
+		"saved":   true,
+		"name":    chartData.Name,
 		"version": chartData.Version,
 	})
 }
@@ -228,19 +322,19 @@ func (s *Server) handleUploadChart(c *gin.Context) {
 func (s *Server) handleDeleteChart(c *gin.Context) {
 	name := c.Param("name")
 	version := c.Param("version")
-	
+
 	filename := fmt.Sprintf("%s-%s.tgz", name, version)
-	
+
 	if !s.storage.ChartExists(filename) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
 		return
 	}
-	
+
 	if err := s.storage.DeleteChart(filename); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
 
@@ -249,19 +343,19 @@ func (s *Server) handleDownloadChart(c *gin.Context) {
 	name := c.Param("name")
 	version := c.Param("version")
 	filename := fmt.Sprintf("%s-%s.tgz", name, version)
-	
+
 	if !s.storage.ChartExists(filename) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
 		return
 	}
-	
+
 	reader, err := s.storage.GetChart(filename)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	defer reader.Close()
-	
+
 	c.Header("Content-Type", "application/gzip")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.DataFromReader(http.StatusOK, -1, "application/gzip", reader, nil)
@@ -274,17 +368,17 @@ func (s *Server) handleIndexYAML(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.Header("Content-Type", "application/x-yaml")
 	c.YAML(http.StatusOK, index)
 }
 
 // ChartInfo represents chart information for API responses
 type ChartInfo struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Home        string          `json:"home,omitempty"`
-	Icon        string          `json:"icon,omitempty"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Home        string             `json:"home,omitempty"`
+	Icon        string             `json:"icon,omitempty"`
 	Versions    []ChartVersionInfo `json:"versions"`
 }
 
@@ -304,9 +398,9 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	chartsMap := make(map[string]*ChartInfo)
-	
+
 	for _, file := range files {
 		name, version, err := chart.ParseChartName(file)
 		if err != nil {
@@ -315,7 +409,7 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 			}
 			continue
 		}
-		
+
 		// Read chart metadata
 		reader, err := s.storage.GetChart(file)
 		if err != nil {
@@ -324,7 +418,7 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 			}
 			continue
 		}
-		
+
 		chartData, err := chart.ParseChartFromTarball(reader)
 		reader.Close()
 		if err != nil {
@@ -333,7 +427,7 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 			}
 			continue
 		}
-		
+
 		// Calculate digest
 		digest, err := s.calculateDigest(file)
 		if err != nil {
@@ -341,11 +435,11 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 				log.Printf("Failed to calculate digest for %s: %v", file, err)
 			}
 		}
-		
+
 		// Get base URL
 		baseURL := s.getBaseURL()
 		url := fmt.Sprintf("%s/charts/%s/%s/%s", baseURL, name, version, filepath.Base(file))
-		
+
 		if chartsMap[name] == nil {
 			chartsMap[name] = &ChartInfo{
 				Name:        chartData.Name,
@@ -355,7 +449,7 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 				Versions:    []ChartVersionInfo{},
 			}
 		}
-		
+
 		chartsMap[name].Versions = append(chartsMap[name].Versions, ChartVersionInfo{
 			Version:     chartData.Version,
 			AppVersion:  chartData.AppVersion,
@@ -365,7 +459,7 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 			Digest:      digest,
 		})
 	}
-	
+
 	// Convert map to slice and sort versions
 	var charts []ChartInfo
 	for _, ch := range chartsMap {
@@ -375,12 +469,12 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 		})
 		charts = append(charts, *ch)
 	}
-	
+
 	// Sort charts by name
 	sort.Slice(charts, func(i, j int) bool {
 		return charts[i].Name < charts[j].Name
 	})
-	
+
 	return charts, nil
 }
 
@@ -390,31 +484,31 @@ func (s *Server) generateIndex() (*chart.Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	index := &chart.Index{
 		APIVersion: "v1",
 		Generated:  time.Now().UTC().Format(time.RFC3339),
 		Entries:    make(map[string][]chart.ChartVersion),
 	}
-	
+
 	for _, ch := range charts {
 		var versions []chart.ChartVersion
 		for _, v := range ch.Versions {
 			versions = append(versions, chart.ChartVersion{
 				Name:        ch.Name,
-				Version:      v.Version,
-				Description:  v.Description,
-				Home:         ch.Home,
-				Icon:         ch.Icon,
-				AppVersion:   v.AppVersion,
-				URLs:         v.URLs,
-				Digest:       v.Digest,
-				Created:      v.Created.Format(time.RFC3339),
+				Version:     v.Version,
+				Description: v.Description,
+				Home:        ch.Home,
+				Icon:        ch.Icon,
+				AppVersion:  v.AppVersion,
+				URLs:        v.URLs,
+				Digest:      v.Digest,
+				Created:     v.Created.Format(time.RFC3339),
 			})
 		}
 		index.Entries[ch.Name] = versions
 	}
-	
+
 	return index, nil
 }
 
@@ -425,12 +519,12 @@ func (s *Server) calculateDigest(filename string) (string, error) {
 		return "", err
 	}
 	defer reader.Close()
-	
+
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, reader); err != nil {
 		return "", err
 	}
-	
+
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
@@ -440,4 +534,3 @@ func (s *Server) getBaseURL() string {
 	// For now, return a relative path (Helm will resolve it relative to the index.yaml URL)
 	return ""
 }
-

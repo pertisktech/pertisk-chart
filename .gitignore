@@ -37,3 +37,7 @@ Thumbs.db
 dist/
 build/
 
+# Air hot reload
+tmp/
+build-errors.log
+
