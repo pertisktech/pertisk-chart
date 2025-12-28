@@ -123,6 +123,7 @@ func (s *Server) setupRoutes() {
 		api.GET("/charts/:name/:version", s.handleGetChartVersion)
 		api.GET("/charts/:name/:version/values", s.handleGetValues)
 		api.GET("/charts/:name/:version/values.yaml", s.handleDownloadValues)
+		api.GET("/charts/:name/:version/readme", s.handleGetReadme)
 		
 		// Authentication routes
 		auth := api.Group("/auth")
@@ -195,8 +196,8 @@ func (s *Server) setupRoutes() {
 			// If it has 3 segments, check if it's an API endpoint
 			if len(parts) == 3 {
 				lastPart := parts[2]
-				// Exclude chart downloads and values endpoints
-				if lastPart == "values" || lastPart == "values.yaml" || strings.HasSuffix(lastPart, ".tgz") {
+				// Exclude chart downloads, values, and readme endpoints
+				if lastPart == "values" || lastPart == "values.yaml" || lastPart == "readme" || strings.HasSuffix(lastPart, ".tgz") {
 					c.Status(http.StatusNotFound)
 					return
 				}
@@ -442,6 +443,37 @@ func (s *Server) handleDownloadValues(c *gin.Context) {
 	c.Header("Content-Type", "application/x-yaml")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", valuesFilename))
 	c.Data(http.StatusOK, "application/x-yaml", valuesData)
+}
+
+// handleGetReadme returns the README.md as JSON
+func (s *Server) handleGetReadme(c *gin.Context) {
+	name := c.Param("name")
+	version := c.Param("version")
+	filename := fmt.Sprintf("%s-%s.tgz", name, version)
+
+	if !s.storage.ChartExists(filename) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
+		return
+	}
+
+	reader, err := s.storage.GetChart(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Extract README.md
+	readmeData, err := chart.ExtractREADME(reader)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("README.md not found: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"readme": string(readmeData),
+		"markdown": string(readmeData),
+	})
 }
 
 // handleIndexYAML generates and returns the Helm repository index

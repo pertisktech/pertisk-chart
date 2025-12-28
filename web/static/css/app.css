@@ -1613,6 +1613,188 @@ body {
     box-sizing: border-box;
 }
 
+/* README Section */
+.readme-section {
+    padding: var(--spacing-lg);
+}
+
+.readme-loading,
+.readme-error {
+    padding: var(--spacing-xl);
+    text-align: center;
+}
+
+.readme-content {
+    padding: var(--spacing-lg);
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.readme-content h1,
+.readme-content h2,
+.readme-content h3,
+.readme-content h4,
+.readme-content h5,
+.readme-content h6 {
+    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.readme-content h1 {
+    font-size: var(--font-size-2xl);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+}
+
+.readme-content h2 {
+    font-size: var(--font-size-xl);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-xs);
+}
+
+.readme-content h3 {
+    font-size: var(--font-size-lg);
+}
+
+.readme-content p {
+    margin-bottom: var(--spacing-md);
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.readme-content ul,
+.readme-content ol {
+    margin-bottom: var(--spacing-md);
+    padding-left: var(--spacing-xl);
+    line-height: 1.7;
+}
+
+.readme-content li {
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-primary);
+}
+
+.readme-content code {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+    font-size: 0.9em;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    color: var(--text-primary);
+}
+
+.readme-content pre {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: var(--spacing-md);
+    overflow-x: auto;
+    margin-bottom: var(--spacing-md);
+    line-height: 1.6;
+}
+
+.readme-content pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 0.9em;
+}
+
+.readme-content blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.readme-content a {
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: var(--transition);
+}
+
+.readme-content a:hover {
+    border-bottom-color: var(--primary);
+}
+
+.readme-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    margin: var(--spacing-md) 0;
+}
+
+.readme-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--spacing-md) 0;
+    overflow-x: auto;
+    display: block;
+}
+
+.readme-content table thead {
+    background: var(--bg-secondary);
+}
+
+.readme-content table th,
+.readme-content table td {
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+}
+
+.readme-content table th {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.readme-content table td {
+    color: var(--text-secondary);
+}
+
+.readme-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: var(--spacing-xl) 0;
+}
+
+.readme-plain {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .readme-content code {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .readme-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .readme-content table thead {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .readme-content blockquote {
+    border-left-color: var(--primary);
+}
+
 /* Default Values Section */
 .default-values-section {
     margin-top: 0;

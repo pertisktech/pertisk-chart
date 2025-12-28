@@ -157,3 +157,37 @@ func ExtractValuesYAML(reader io.Reader) ([]byte, error) {
 	return nil, fmt.Errorf("values.yaml not found in chart tarball")
 }
 
+// ExtractREADME extracts README.md from a chart tarball
+func ExtractREADME(reader io.Reader) ([]byte, error) {
+	gzr, err := gzip.NewReader(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzr.Close()
+
+	tr := tar.NewReader(gzr)
+	
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to read tar: %w", err)
+		}
+
+		// Look for README.md in the chart directory
+		// Format: chart-name/README.md or README.md
+		baseName := filepath.Base(header.Name)
+		if baseName == "README.md" || strings.HasSuffix(header.Name, "/README.md") {
+			readmeData, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read README.md: %w", err)
+			}
+			return readmeData, nil
+		}
+	}
+
+	return nil, fmt.Errorf("README.md not found in chart tarball")
+}
+

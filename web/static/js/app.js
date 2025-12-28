@@ -535,6 +535,16 @@ function renderChartDetailContent(chart) {
                     </svg>
                     Installation
                 </button>
+                <button class="chart-detail-tab" data-tab="readme" onclick="switchChartDetailTab('readme')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    README
+                </button>
                 <button class="chart-detail-tab" data-tab="values" onclick="switchChartDetailTab('values')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -840,6 +850,32 @@ function renderChartDetailContent(chart) {
                 </div>
             </div>
             
+            <!-- README Tab Content -->
+            <div class="chart-detail-tab-content" id="chart-detail-readme">
+                <div class="readme-section" id="readmeSection-${chart.name}">
+                    <div class="readme-loading" id="readmeLoading-${chart.name}">
+                        <div class="empty-state">
+                            <p>Loading README...</p>
+                        </div>
+                    </div>
+                    <div class="readme-error" id="readmeError-${chart.name}" style="display: none;">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md); opacity: 0.5;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <h3>No README Available</h3>
+                            <p>This chart does not have a README.md file.</p>
+                        </div>
+                    </div>
+                    <div class="readme-content" id="readmeContent-${chart.name}" style="display: none;">
+                        <!-- README will be rendered here -->
+                    </div>
+                </div>
+            </div>
+            
             <!-- Default Values Tab Content -->
             <div class="chart-detail-tab-content" id="chart-detail-values">
                 <div class="default-values-section" id="defaultValuesSection-${chart.name}">
@@ -914,6 +950,7 @@ function renderChartDetailContent(chart) {
         // Small delay to ensure DOM is ready
         setTimeout(() => {
             loadDefaultValues(chart.name, latestVersion.version);
+            loadReadme(chart.name, latestVersion.version);
         }, 100);
     }
 }
@@ -950,6 +987,69 @@ function switchChartDetailTab(tabName) {
                 textarea.cmEditor.refresh();
             }, 100);
         }
+    }
+    
+    // Load README if readme tab is selected
+    if (tabName === 'readme' && state.currentChart) {
+        const latestVersion = state.currentChart.versions && state.currentChart.versions.length > 0 
+            ? state.currentChart.versions[0] 
+            : null;
+        if (latestVersion) {
+            loadReadme(state.currentChart.name, latestVersion.version);
+        }
+    }
+}
+
+// Load README for a chart
+async function loadReadme(chartName, version) {
+    const readmeSection = document.getElementById(`readmeSection-${chartName}`);
+    const readmeLoading = document.getElementById(`readmeLoading-${chartName}`);
+    const readmeError = document.getElementById(`readmeError-${chartName}`);
+    const readmeContent = document.getElementById(`readmeContent-${chartName}`);
+    
+    if (!readmeSection || !readmeLoading || !readmeError || !readmeContent) {
+        return;
+    }
+    
+    // Show loading state
+    readmeLoading.style.display = 'block';
+    readmeError.style.display = 'none';
+    readmeContent.style.display = 'none';
+    
+    try {
+        const response = await fetch(`/api/charts/${encodeURIComponent(chartName)}/${encodeURIComponent(version)}/readme`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                // Chart doesn't have README.md
+                readmeLoading.style.display = 'none';
+                readmeError.style.display = 'block';
+                return;
+            }
+            throw new Error(`Failed to load README: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const markdown = data.readme || data.markdown || '';
+        
+        // Render markdown to HTML using marked.js
+        if (typeof marked !== 'undefined') {
+            const html = marked.parse(markdown);
+            readmeContent.innerHTML = html;
+        } else {
+            // Fallback: display as plain text with line breaks
+            readmeContent.innerHTML = `<pre class="readme-plain">${escapeHtml(markdown)}</pre>`;
+        }
+        
+        // Hide loading, show content
+        readmeLoading.style.display = 'none';
+        readmeError.style.display = 'none';
+        readmeContent.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading README:', error);
+        readmeLoading.style.display = 'none';
+        readmeError.style.display = 'block';
     }
 }
 
