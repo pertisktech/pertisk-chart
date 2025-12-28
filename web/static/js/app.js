@@ -97,7 +97,10 @@ function setupEventListeners() {
         searchInput.addEventListener('input', handleSearch);
     }
 
-    // Sort
+    // Initialize modern dropdowns
+    initializeModernDropdowns();
+
+    // Sort (hidden select for compatibility)
     const sortSelect = document.getElementById('sortSelect');
     if (sortSelect) {
         sortSelect.addEventListener('change', (e) => {
@@ -812,7 +815,225 @@ function renderChartDetailContent(chart) {
                 </div>
             </div>
         </div>
+        
+        <div class="default-values-section" id="defaultValuesSection-${chart.name}">
+            <div class="section-header-inline">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Default Values
+                </h2>
+                <div class="values-actions">
+                    <button class="btn-secondary btn-sm" onclick="loadDefaultValues('${chart.name}', '${latestVersion ? latestVersion.version : ''}')" id="loadValuesBtn-${chart.name}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Show Values
+                    </button>
+                    ${latestVersion ? `
+                        <a href="/api/charts/${encodeURIComponent(chart.name)}/${encodeURIComponent(latestVersion.version)}/values.yaml" 
+                           class="btn-download btn-sm" 
+                           download="${chart.name}-${latestVersion.version}-values.yaml"
+                           title="Download values.yaml">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="values-content" id="valuesContent-${chart.name}" style="display: none;">
+                <div class="values-loading" id="valuesLoading-${chart.name}">
+                    <p>Loading default values...</p>
+                </div>
+                <div class="values-error" id="valuesError-${chart.name}" style="display: none;">
+                    <p>Failed to load default values. This chart may not have a values.yaml file.</p>
+                </div>
+                <div class="values-display" id="valuesDisplay-${chart.name}" style="display: none;">
+                    <div class="yaml-editor-container">
+                        <div class="code-header">
+                            <span class="code-lang">yaml</span>
+                            <div class="editor-actions">
+                                <button class="copy-btn" onclick="copyYamlContent('values-editor-${chart.name}', this)" title="Copy values.yaml">
+                                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    <span class="copy-text">Copy</span>
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="values-editor-${chart.name}" class="yaml-editor-textarea"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
+    
+    // Load default values if available
+    if (latestVersion) {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            loadDefaultValues(chart.name, latestVersion.version);
+        }, 100);
+    }
+}
+
+// Load default values for a chart
+async function loadDefaultValues(chartName, version) {
+    const valuesSection = document.getElementById(`defaultValuesSection-${chartName}`);
+    const valuesContent = document.getElementById(`valuesContent-${chartName}`);
+    const valuesLoading = document.getElementById(`valuesLoading-${chartName}`);
+    const valuesError = document.getElementById(`valuesError-${chartName}`);
+    const valuesDisplay = document.getElementById(`valuesDisplay-${chartName}`);
+    const loadBtn = document.getElementById(`loadValuesBtn-${chartName}`);
+    
+    if (!valuesContent || !valuesLoading || !valuesError || !valuesDisplay) {
+        console.error('Values section elements not found');
+        return;
+    }
+    
+    // Show content area
+    valuesContent.style.display = 'block';
+    valuesLoading.style.display = 'block';
+    valuesError.style.display = 'none';
+    valuesDisplay.style.display = 'none';
+    
+    // Update button text
+    if (loadBtn) {
+        loadBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Loading...
+        `;
+        loadBtn.disabled = true;
+    }
+    
+    try {
+        const response = await fetch(`/api/charts/${encodeURIComponent(chartName)}/${encodeURIComponent(version)}/values`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                // Chart doesn't have values.yaml
+                valuesLoading.style.display = 'none';
+                valuesError.style.display = 'block';
+                if (loadBtn) {
+                    loadBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Show Values
+                    `;
+                    loadBtn.disabled = false;
+                }
+                return;
+            }
+            throw new Error(`Failed to load values: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const yamlContent = data.yaml || '';
+        
+        // Hide loading, show display
+        valuesLoading.style.display = 'none';
+        valuesError.style.display = 'none';
+        valuesDisplay.style.display = 'block';
+        
+        // Initialize CodeMirror editor
+        const textarea = document.getElementById(`values-editor-${chartName}`);
+        if (textarea && typeof CodeMirror !== 'undefined') {
+            // Destroy existing editor if any
+            if (textarea.cmEditor) {
+                textarea.cmEditor.toTextArea();
+            }
+            
+            // Get current theme
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const cmTheme = currentTheme === 'dark' ? 'monokai' : 'default';
+            
+            // Create new CodeMirror instance
+            const editor = CodeMirror.fromTextArea(textarea, {
+                mode: 'yaml',
+                theme: cmTheme,
+                lineNumbers: true,
+                lineWrapping: true,
+                readOnly: true,
+                indentUnit: 2,
+                tabSize: 2,
+                viewportMargin: Infinity,
+                autoRefresh: true
+            });
+            
+            // Set the content
+            editor.setValue(yamlContent);
+            
+            // Store reference for later use
+            textarea.cmEditor = editor;
+            
+            // Refresh editor after a short delay to ensure proper rendering
+            setTimeout(() => {
+                editor.refresh();
+            }, 100);
+        } else if (textarea) {
+            // Fallback if CodeMirror is not loaded
+            textarea.value = yamlContent;
+        }
+        
+        // Update button to show "Hide Values"
+        if (loadBtn) {
+            loadBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                    <polyline points="18 6 6 18"></polyline>
+                    <polyline points="6 6 18 18"></polyline>
+                </svg>
+                Hide Values
+            `;
+            loadBtn.onclick = () => {
+                valuesContent.style.display = 'none';
+                loadBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Show Values
+                `;
+                loadBtn.onclick = () => loadDefaultValues(chartName, version);
+            };
+            loadBtn.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('Error loading default values:', error);
+        valuesLoading.style.display = 'none';
+        valuesError.style.display = 'block';
+        if (loadBtn) {
+            loadBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Show Values
+            `;
+            loadBtn.disabled = false;
+        }
+    }
 }
 
 // Handle search
@@ -1502,6 +1723,119 @@ function showStatus(element, message, type) {
 }
 
 
+// Initialize modern dropdowns
+function initializeModernDropdowns() {
+    // Initialize sort dropdown
+    const sortDropdown = document.getElementById('sortSelectDropdown');
+    if (sortDropdown) {
+        setupModernDropdown(sortDropdown, 'sortSelect', 'name');
+    }
+
+    // Initialize management sort dropdown
+    const managementDropdown = document.getElementById('managementSortDropdown');
+    if (managementDropdown) {
+        setupModernDropdown(managementDropdown, 'managementSort', 'name');
+    }
+}
+
+// Setup a modern dropdown
+function setupModernDropdown(dropdownElement, selectId, defaultValue) {
+    const toggle = dropdownElement.querySelector('.dropdown-toggle');
+    const menu = dropdownElement.querySelector('.dropdown-menu');
+    const items = dropdownElement.querySelectorAll('.dropdown-item');
+    const hiddenSelect = document.getElementById(selectId);
+    
+    if (!toggle || !menu || !hiddenSelect) return;
+    
+    // Set initial value
+    const initialValue = hiddenSelect.value || defaultValue;
+    setDropdownValue(dropdownElement, initialValue, hiddenSelect);
+    
+    // Toggle dropdown
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdownElement.classList.contains('open');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.modern-dropdown').forEach(dd => {
+            if (dd !== dropdownElement) {
+                dd.classList.remove('open');
+                dd.querySelector('.dropdown-toggle')?.setAttribute('aria-expanded', 'false');
+            }
+        });
+        
+        if (isOpen) {
+            dropdownElement.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+        } else {
+            dropdownElement.classList.add('open');
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+    });
+    
+    // Handle item selection
+    items.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const value = item.dataset.value;
+            setDropdownValue(dropdownElement, value, hiddenSelect);
+            dropdownElement.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            
+            // Trigger change event on hidden select
+            const event = new Event('change', { bubbles: true });
+            hiddenSelect.dispatchEvent(event);
+        });
+    });
+    
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (!dropdownElement.contains(e.target)) {
+            dropdownElement.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dropdownElement.classList.contains('open')) {
+            dropdownElement.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+
+// Set dropdown value
+function setDropdownValue(dropdownElement, value, hiddenSelect) {
+    const selectedText = dropdownElement.querySelector(`.dropdown-item[data-value="${value}"] span`)?.textContent || '';
+    const selectedSpan = dropdownElement.querySelector('.dropdown-selected');
+    const items = dropdownElement.querySelectorAll('.dropdown-item');
+    
+    // Update selected text
+    if (selectedSpan) {
+        selectedSpan.textContent = selectedText;
+    }
+    
+    // Update active state
+    items.forEach(item => {
+        const itemValue = item.dataset.value;
+        const check = item.querySelector('.dropdown-check');
+        
+        if (itemValue === value) {
+            item.classList.add('active');
+            if (check) check.style.display = 'block';
+        } else {
+            item.classList.remove('active');
+            if (check) check.style.display = 'none';
+        }
+    });
+    
+    // Update hidden select
+    if (hiddenSelect) {
+        hiddenSelect.value = value;
+    }
+}
+
 // Make functions available globally for onclick handlers
 // Copy to clipboard function
 async function copyToClipboard(elementId, button) {
@@ -1894,7 +2228,60 @@ document.addEventListener('DOMContentLoaded', () => {
 window.showChartDetail = showChartDetail;
 window.deleteChart = deleteChart;
 window.showView = showView;
+// Copy YAML content from CodeMirror editor
+async function copyYamlContent(editorId, button) {
+    const textarea = document.getElementById(editorId);
+    if (!textarea) return;
+    
+    let text = '';
+    if (textarea.cmEditor) {
+        // CodeMirror editor
+        text = textarea.cmEditor.getValue();
+    } else {
+        // Fallback to textarea value
+        text = textarea.value;
+    }
+    
+    try {
+        await navigator.clipboard.writeText(text);
+        
+        // Update button to show success
+        const copyText = button.querySelector('.copy-text');
+        if (copyText) {
+            const originalText = copyText.textContent;
+            copyText.textContent = 'Copied!';
+            setTimeout(() => {
+                copyText.textContent = originalText;
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        // Fallback for older browsers
+        const fallbackTextarea = document.createElement('textarea');
+        fallbackTextarea.value = text;
+        fallbackTextarea.style.position = 'fixed';
+        fallbackTextarea.style.opacity = '0';
+        document.body.appendChild(fallbackTextarea);
+        fallbackTextarea.select();
+        try {
+            document.execCommand('copy');
+            const copyText = button.querySelector('.copy-text');
+            if (copyText) {
+                const originalText = copyText.textContent;
+                copyText.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyText.textContent = originalText;
+                }, 2000);
+            }
+        } catch (e) {
+            console.error('Fallback copy failed:', e);
+        }
+        document.body.removeChild(fallbackTextarea);
+    }
+}
+
 window.copyToClipboard = copyToClipboard;
+window.copyYamlContent = copyYamlContent;
 window.switchInstallTab = switchInstallTab;
 window.switchAdminTab = switchAdminTab;
 window.toggleAdmin = toggleAdmin;
@@ -1921,6 +2308,22 @@ function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
     updateThemeIcon(theme);
+    // Update CodeMirror theme for all editors
+    updateCodeMirrorThemes(theme);
+}
+
+// Update CodeMirror themes when theme changes
+function updateCodeMirrorThemes(theme) {
+    // Find all CodeMirror editors
+    const textareas = document.querySelectorAll('.yaml-editor-textarea');
+    textareas.forEach(textarea => {
+        if (textarea.cmEditor) {
+            const editor = textarea.cmEditor;
+            const newTheme = theme === 'dark' ? 'monokai' : 'default';
+            editor.setOption('theme', newTheme);
+            editor.refresh();
+        }
+    });
 }
 
 function toggleTheme() {

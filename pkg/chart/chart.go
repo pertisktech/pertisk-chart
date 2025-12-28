@@ -124,3 +124,36 @@ func ParseChartName(filename string) (name, version string, err error) {
 	return name, version, nil
 }
 
+// ExtractValuesYAML extracts values.yaml from a chart tarball
+func ExtractValuesYAML(reader io.Reader) ([]byte, error) {
+	gzr, err := gzip.NewReader(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzr.Close()
+
+	tr := tar.NewReader(gzr)
+	
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to read tar: %w", err)
+		}
+
+		// Look for values.yaml in the chart directory
+		// Format: chart-name/values.yaml
+		if strings.HasSuffix(header.Name, "/values.yaml") || filepath.Base(header.Name) == "values.yaml" {
+			valuesData, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read values.yaml: %w", err)
+			}
+			return valuesData, nil
+		}
+	}
+
+	return nil, fmt.Errorf("values.yaml not found in chart tarball")
+}
+

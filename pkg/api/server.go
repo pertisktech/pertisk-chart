@@ -19,6 +19,7 @@ import (
 	"github.com/pertisk-tech/pertisk-chart/pkg/chart"
 	"github.com/pertisk-tech/pertisk-chart/pkg/storage"
 	"github.com/quic-go/quic-go/http3"
+	"gopkg.in/yaml.v3"
 )
 
 // Config holds server configuration
@@ -120,6 +121,8 @@ func (s *Server) setupRoutes() {
 		api.GET("/charts", s.handleListCharts)
 		api.GET("/charts/:name", s.handleGetChart)
 		api.GET("/charts/:name/:version", s.handleGetChartVersion)
+		api.GET("/charts/:name/:version/values", s.handleGetValues)
+		api.GET("/charts/:name/:version/values.yaml", s.handleDownloadValues)
 		
 		// Authentication routes
 		auth := api.Group("/auth")
@@ -181,16 +184,22 @@ func (s *Server) setupRoutes() {
 			return
 		}
 		
-		// Exclude chart downloads (pattern: /charts/:name/:version/:filename - 3 path segments)
+		// Exclude chart downloads and values endpoints
+		// Pattern: /charts/:name/:version/:filename (3 segments) - chart download
+		// Pattern: /charts/:name/:version/values (3 segments, last is "values") - values API
+		// Pattern: /charts/:name/:version/values.yaml (3 segments, last is "values.yaml") - values download
 		// But allow client-side routes like /charts or /charts/:name (1 or 2 segments)
 		if strings.HasPrefix(path, "/charts/") {
 			// Count path segments after /charts/
 			parts := strings.Split(strings.TrimPrefix(path, "/charts/"), "/")
-			// If it has 3 segments (name/version/filename), it's a chart download - return 404
-			// Otherwise, it's a client-side route - serve index.html
+			// If it has 3 segments, check if it's an API endpoint
 			if len(parts) == 3 {
-				c.Status(http.StatusNotFound)
-				return
+				lastPart := parts[2]
+				// Exclude chart downloads and values endpoints
+				if lastPart == "values" || lastPart == "values.yaml" || strings.HasSuffix(lastPart, ".tgz") {
+					c.Status(http.StatusNotFound)
+					return
+				}
 			}
 		}
 		
@@ -359,6 +368,80 @@ func (s *Server) handleDownloadChart(c *gin.Context) {
 	c.Header("Content-Type", "application/gzip")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.DataFromReader(http.StatusOK, -1, "application/gzip", reader, nil)
+}
+
+// handleGetValues returns the default values.yaml as JSON
+func (s *Server) handleGetValues(c *gin.Context) {
+	name := c.Param("name")
+	version := c.Param("version")
+	filename := fmt.Sprintf("%s-%s.tgz", name, version)
+
+	if !s.storage.ChartExists(filename) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
+		return
+	}
+
+	reader, err := s.storage.GetChart(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Extract values.yaml
+	valuesData, err := chart.ExtractValuesYAML(reader)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("values.yaml not found: %v", err)})
+		return
+	}
+
+	// Parse YAML to JSON for easier frontend handling
+	var valuesMap map[string]interface{}
+	if err := yaml.Unmarshal(valuesData, &valuesMap); err != nil {
+		// If parsing fails, return raw YAML as string
+		c.JSON(http.StatusOK, gin.H{
+			"yaml": string(valuesData),
+			"raw":   true,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"yaml": string(valuesData),
+		"data": valuesMap,
+		"raw":  false,
+	})
+}
+
+// handleDownloadValues downloads the default values.yaml file
+func (s *Server) handleDownloadValues(c *gin.Context) {
+	name := c.Param("name")
+	version := c.Param("version")
+	filename := fmt.Sprintf("%s-%s.tgz", name, version)
+
+	if !s.storage.ChartExists(filename) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
+		return
+	}
+
+	reader, err := s.storage.GetChart(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Extract values.yaml
+	valuesData, err := chart.ExtractValuesYAML(reader)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("values.yaml not found: %v", err)})
+		return
+	}
+
+	valuesFilename := fmt.Sprintf("%s-%s-values.yaml", name, version)
+	c.Header("Content-Type", "application/x-yaml")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", valuesFilename))
+	c.Data(http.StatusOK, "application/x-yaml", valuesData)
 }
 
 // handleIndexYAML generates and returns the Helm repository index

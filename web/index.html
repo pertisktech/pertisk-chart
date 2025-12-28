@@ -97,7 +97,36 @@
                     <div class="section-header">
                         <h2 class="section-title">Available Charts</h2>
                         <div class="filters">
-                            <select id="sortSelect" class="filter-select">
+                            <div class="modern-dropdown" id="sortSelectDropdown">
+                                <button class="dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+                                    <span class="dropdown-selected">Sort by Name</span>
+                                    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li class="dropdown-item" data-value="name" role="menuitem">
+                                        <span>Sort by Name</span>
+                                        <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </li>
+                                    <li class="dropdown-item" data-value="recent" role="menuitem">
+                                        <span>Most Recent</span>
+                                        <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </li>
+                                    <li class="dropdown-item" data-value="versions" role="menuitem">
+                                        <span>Most Versions</span>
+                                        <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- Hidden select for compatibility -->
+                            <select id="sortSelect" class="filter-select" style="display: none;">
                                 <option value="name">Sort by Name</option>
                                 <option value="recent">Most Recent</option>
                                 <option value="versions">Most Versions</option>
@@ -151,7 +180,42 @@
 
                     <div class="management-filters">
                         <input type="text" id="managementSearch" class="search-input" placeholder="Search my charts..." style="max-width: 400px;">
-                        <select id="managementSort" class="filter-select">
+                        <div class="modern-dropdown" id="managementSortDropdown">
+                            <button class="dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+                                <span class="dropdown-selected">Sort by Name</span>
+                                <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <ul class="dropdown-menu" role="menu">
+                                <li class="dropdown-item" data-value="name" role="menuitem">
+                                    <span>Sort by Name</span>
+                                    <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </li>
+                                <li class="dropdown-item" data-value="recent" role="menuitem">
+                                    <span>Most Recent</span>
+                                    <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </li>
+                                <li class="dropdown-item" data-value="versions" role="menuitem">
+                                    <span>Most Versions</span>
+                                    <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </li>
+                                <li class="dropdown-item" data-value="size" role="menuitem">
+                                    <span>Largest</span>
+                                    <svg class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- Hidden select for compatibility -->
+                        <select id="managementSort" class="filter-select" style="display: none;">
                             <option value="name">Sort by Name</option>
                             <option value="recent">Most Recent</option>
                             <option value="versions">Most Versions</option>
@@ -371,6 +435,11 @@
         </div>
     </div>
 
+    <!-- CodeMirror for YAML editor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
