@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Pertisk Chart Repository</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Pertisk Chart Repository</h1>
+            <p class="subtitle">Helm Chart Repository Server</p>
+        </header>
+        
+        <nav>
+            <a href="/" class="nav-link">Home</a>
+            <a href="/charts" class="nav-link active">Browse Charts</a>
+            <a href="/api/charts" class="nav-link">API</a>
+        </nav>
+        
+        <main>
+            <div class="charts-header">
+                <h2>Available Charts</h2>
+                <div class="upload-section">
+                    <h3>Upload Chart</h3>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="file" id="chartFile" name="chart" accept=".tgz" required>
+                        <button type="submit" class="btn-primary">Upload</button>
+                    </form>
+                    <div id="uploadStatus" class="status-message"></div>
+                </div>
+            </div>
+            
+            <div id="chartsContainer" class="charts-grid">
+                {{range .charts}}
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>{{.Name}}</h3>
+                        {{if .Icon}}
+                        <img src="{{.Icon}}" alt="{{.Name}} icon" class="chart-icon">
+                        {{end}}
+                    </div>
+                    <p class="chart-description">{{.Description}}</p>
+                    {{if .Home}}
+                    <p class="chart-home"><a href="{{.Home}}" target="_blank">{{.Home}}</a></p>
+                    {{end}}
+                    
+                    <div class="chart-versions">
+                        <h4>Versions ({{len .Versions}}):</h4>
+                        <ul class="version-list">
+                            {{range .Versions}}
+                            <li class="version-item">
+                                <span class="version-badge">{{.Version}}</span>
+                                {{if .AppVersion}}
+                                <span class="app-version">App: {{.AppVersion}}</span>
+                                {{end}}
+                                <div class="version-actions">
+                                    <a href="{{index .URLs 0}}" class="btn-download" download>Download</a>
+                                    <button class="btn-delete" onclick="deleteChart('{{$.Name}}', '{{.Version}}')">Delete</button>
+                                </div>
+                            </li>
+                            {{end}}
+                        </ul>
+                    </div>
+                </div>
+                {{else}}
+                <div class="empty-state">
+                    <p>No charts available. Upload your first chart to get started!</p>
+                </div>
+                {{end}}
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Pertisk Chart Repository. Built with Go and Gin.</p>
+        </footer>
+    </div>
+    
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Upload form handler
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('chartFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files[0]) {
+                statusDiv.textContent = 'Please select a chart file';
+                statusDiv.className = 'status-message error';
+                return;
+            }
+            
+            formData.append('chart', fileInput.files[0]);
+            statusDiv.textContent = 'Uploading...';
+            statusDiv.className = 'status-message info';
+            
+            try {
+                const response = await fetch('/api/charts', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.textContent = `Chart ${data.name} v${data.version} uploaded successfully!`;
+                    statusDiv.className = 'status-message success';
+                    fileInput.value = '';
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    statusDiv.textContent = `Error: ${data.error}`;
+                    statusDiv.className = 'status-message error';
+                }
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.className = 'status-message error';
+            }
+        });
+        
+        // Delete chart handler
+        async function deleteChart(name, version) {
+            if (!confirm(`Are you sure you want to delete ${name} version ${version}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/charts/${name}/${version}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
+

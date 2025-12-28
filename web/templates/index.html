@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Pertisk Chart Repository</h1>
+            <p class="subtitle">Helm Chart Repository Server</p>
+        </header>
+        
+        <nav>
+            <a href="/" class="nav-link active">Home</a>
+            <a href="/charts" class="nav-link">Browse Charts</a>
+            <a href="/api/charts" class="nav-link">API</a>
+        </nav>
+        
+        <main>
+            <div class="welcome-section">
+                <h2>Welcome to Pertisk Chart Repository</h2>
+                <p>Your central hub for managing and distributing Helm charts.</p>
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <h3>📦 Chart Management</h3>
+                        <p>Upload, browse, and manage your Helm charts with ease.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔍 Easy Discovery</h3>
+                        <p>Search and discover charts through our intuitive interface.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔌 API Access</h3>
+                        <p>Full REST API for programmatic chart management.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <h2>Quick Start</h2>
+                <div class="code-block">
+                    <h3>Add this repository to Helm:</h3>
+                    <pre><code>helm repo add pertisk http://localhost:8080
+helm repo update</code></pre>
+                </div>
+                
+                <div class="code-block">
+                    <h3>Upload a chart:</h3>
+                    <pre><code>curl -X POST http://localhost:8080/api/charts \
+  -F "chart=@mychart-1.0.0.tgz"</code></pre>
+                </div>
+                
+                <div class="code-block">
+                    <h3>Browse charts:</h3>
+                    <pre><code><a href="/charts">Visit /charts</a></code></pre>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Pertisk Chart Repository. Built with Go and Gin.</p>
+        </footer>
+    </div>
+    
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
+
