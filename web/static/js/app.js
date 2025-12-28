@@ -519,12 +519,41 @@ function renderChartDetailContent(chart) {
             </div>
         </div>
         
-        <div class="versions-section">
-            <div class="section-header-inline">
-                <h2 class="section-title">Available Versions</h2>
-                <span class="version-count-badge">${versionCount} version${versionCount !== 1 ? 's' : ''}</span>
+        <!-- Chart Detail Tabs -->
+        <div class="chart-detail-tabs-container">
+            <div class="chart-detail-tabs">
+                <button class="chart-detail-tab active" data-tab="versions" onclick="switchChartDetailTab('versions')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Available Versions
+                    ${versionCount > 0 ? `<span class="tab-badge">${versionCount}</span>` : ''}
+                </button>
+                <button class="chart-detail-tab" data-tab="installation" onclick="switchChartDetailTab('installation')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    Installation
+                </button>
+                <button class="chart-detail-tab" data-tab="values" onclick="switchChartDetailTab('values')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Default Values
+                </button>
             </div>
-            <ul class="versions-list">
+            
+            <!-- Versions Tab Content -->
+            <div class="chart-detail-tab-content active" id="chart-detail-versions">
+                <div class="versions-section">
+                    <div class="section-header-inline">
+                        <h2 class="section-title">Available Versions</h2>
+                        <span class="version-count-badge">${versionCount} version${versionCount !== 1 ? 's' : ''}</span>
+                    </div>
+                    <ul class="versions-list">
                 ${chart.versions && chart.versions.length > 0 ? 
                     chart.versions.map((v, index) => `
                         <li class="version-item">
@@ -814,9 +843,12 @@ function renderChartDetailContent(chart) {
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="default-values-section" id="defaultValuesSection-${chart.name}">
+                </div>
+            </div>
+            
+            <!-- Default Values Tab Content -->
+            <div class="chart-detail-tab-content" id="chart-detail-values">
+                <div class="default-values-section" id="defaultValuesSection-${chart.name}">
             <div class="section-header-inline">
                 <h2 class="section-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
@@ -877,6 +909,9 @@ function renderChartDetailContent(chart) {
                     </div>
                 </div>
             </div>
+                </div>
+            </div>
+        </div>
         </div>
     `;
     
@@ -886,6 +921,41 @@ function renderChartDetailContent(chart) {
         setTimeout(() => {
             loadDefaultValues(chart.name, latestVersion.version);
         }, 100);
+    }
+}
+
+// Switch chart detail tab
+function switchChartDetailTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.chart-detail-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.chart-detail-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    const selectedContent = document.getElementById(`chart-detail-${tabName}`);
+    if (selectedContent) {
+        selectedContent.classList.add('active');
+    }
+    
+    // Add active class to selected tab
+    const selectedTab = document.querySelector(`.chart-detail-tab[data-tab="${tabName}"]`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    
+    // Refresh CodeMirror if values tab is selected
+    if (tabName === 'values') {
+        const textarea = document.querySelector(`#values-editor-${state.currentChart?.name}`);
+        if (textarea && textarea.cmEditor) {
+            setTimeout(() => {
+                textarea.cmEditor.refresh();
+            }, 100);
+        }
     }
 }
 
@@ -1619,9 +1689,24 @@ function renderMyCharts() {
 
     // Calculate stats
     const totalVersions = myCharts.reduce((sum, chart) => sum + (chart.versions ? chart.versions.length : 0), 0);
-    const latestUpload = myCharts.length > 0 && myCharts[0].versions && myCharts[0].versions.length > 0 
-        ? myCharts[0].versions[0].created 
-        : null;
+    
+    // Find the most recent upload across all charts and all versions
+    let latestUpload = null;
+    let latestDate = null;
+    
+    myCharts.forEach(chart => {
+        if (chart.versions && chart.versions.length > 0) {
+            chart.versions.forEach(version => {
+                if (version.created) {
+                    const versionDate = new Date(version.created);
+                    if (!latestDate || versionDate > latestDate) {
+                        latestDate = versionDate;
+                        latestUpload = version.created;
+                    }
+                }
+            });
+        }
+    });
     
     updateMyChartsStats(myCharts.length, totalVersions, latestUpload);
 }
@@ -2284,6 +2369,7 @@ window.copyToClipboard = copyToClipboard;
 window.copyYamlContent = copyYamlContent;
 window.switchInstallTab = switchInstallTab;
 window.switchAdminTab = switchAdminTab;
+window.switchChartDetailTab = switchChartDetailTab;
 window.toggleAdmin = toggleAdmin;
 
 // Auto-show charts view when searching

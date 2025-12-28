@@ -146,9 +146,11 @@ body {
 }
 
 .logo-icon {
-    width: 28px;
-    height: 28px;
-    color: var(--primary);
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
 }
 
 .brand-text {
@@ -1000,8 +1002,79 @@ body {
     font-style: italic;
 }
 
-.versions-section {
+/* Chart Detail Tabs */
+.chart-detail-tabs-container {
     margin-top: var(--spacing-xl);
+}
+
+.chart-detail-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.chart-detail-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.chart-detail-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+}
+
+.chart-detail-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: transparent;
+}
+
+.chart-detail-tab svg {
+    flex-shrink: 0;
+}
+
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--primary-light);
+    color: var(--white);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    margin-left: var(--spacing-xs);
+}
+
+[data-theme="dark"] .tab-badge {
+    background: var(--primary);
+}
+
+.chart-detail-tab-content {
+    display: none;
+}
+
+.chart-detail-tab-content.active {
+    display: block;
+}
+
+.versions-section {
+    margin-top: 0;
 }
 
 .section-header-inline {
@@ -1238,9 +1311,9 @@ body {
 
 /* Default Values Section */
 .default-values-section {
-    margin-top: var(--spacing-xl);
-    padding-top: var(--spacing-xl);
-    border-top: 1px solid var(--border-color);
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .values-actions {
@@ -1828,6 +1901,24 @@ body {
     .management-filters {
         flex-direction: column;
         align-items: stretch;
+    }
+    
+    .chart-detail-tabs {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+    
+    .chart-detail-tab {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--font-size-xs);
+    }
+    
+    .chart-detail-tab svg {
+        width: 14px;
+        height: 14px;
     }
     
     .installation-tabs {
