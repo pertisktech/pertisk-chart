@@ -1543,6 +1543,24 @@ function showModal(modalId) {
     if (modal) {
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        
+        // Clear status messages when opening modals
+        if (modalId === 'loginModal') {
+            clearStatus('loginStatus');
+            // Also reset the form
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) loginForm.reset();
+        } else if (modalId === 'registerModal') {
+            clearStatus('registerStatus');
+            // Also reset the form
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) registerForm.reset();
+        } else if (modalId === 'uploadModal') {
+            clearStatus('uploadStatus');
+            // Also reset the form
+            const uploadForm = document.getElementById('uploadForm');
+            if (uploadForm) uploadForm.reset();
+        }
     }
 }
 
@@ -1551,6 +1569,23 @@ function hideModal(modalId) {
     if (modal) {
         modal.style.display = 'none';
         document.body.style.overflow = '';
+        
+        // Clear status messages when closing modals
+        if (modalId === 'loginModal') {
+            clearStatus('loginStatus');
+        } else if (modalId === 'registerModal') {
+            clearStatus('registerStatus');
+        } else if (modalId === 'uploadModal') {
+            clearStatus('uploadStatus');
+        }
+    }
+}
+
+function clearStatus(statusId) {
+    const statusDiv = document.getElementById(statusId);
+    if (statusDiv) {
+        statusDiv.textContent = '';
+        statusDiv.className = 'upload-status';
     }
 }
 
@@ -1680,6 +1715,17 @@ function handleLogout() {
     state.token = null;
     state.user = null;
     localStorage.removeItem('auth_token');
+    
+    // Clear any status messages in modals
+    clearStatus('loginStatus');
+    clearStatus('registerStatus');
+    clearStatus('uploadStatus');
+    
+    // Close any open modals
+    hideModal('loginModal');
+    hideModal('registerModal');
+    hideModal('uploadModal');
+    
     updateAuthUI();
 }
 
