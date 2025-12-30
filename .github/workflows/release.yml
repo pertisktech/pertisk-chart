@@ -45,10 +45,11 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build binary with static linking (musl)
+      - name: Build binary with static linking
         run: |
-          # Use Alpine (musl libc) to build statically linked binary
-          # SQLite works with musl, so we can use static linking for maximum compatibility
+          # Use Debian-based image with glibc for SQLite3 compatibility
+          # SQLite3 requires glibc features (pread64/pwrite64) not available in musl
+          # We use dynamic linking for glibc but static linking for other libraries
           PLATFORM="linux/${{ matrix.goarch }}"
           
           docker run --rm --platform $PLATFORM \
@@ -58,11 +59,13 @@ jobs:
             -e GOARCH=${{ matrix.goarch }} \
             -e CGO_ENABLED=1 \
             -e GOTOOLCHAIN=auto \
-            golang:alpine \
+            golang:1.21-bookworm \
             sh -c "
-              apk add --no-cache gcc g++ musl-dev && \
+              apt-get update && \
+              apt-get install -y gcc libc6-dev && \
               go build -a \
-                -ldflags='-linkmode external -extldflags \"-static\" -s -w' \
+                -ldflags='-s -w' \
+                -tags 'osusergo netgo' \
                 -o ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} \
                 ./cmd/server
             "
