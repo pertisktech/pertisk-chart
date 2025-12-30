@@ -27,6 +27,7 @@ func main() {
 		tlsCertFile    = flag.String("tls-cert", "", "Path to TLS certificate file (required for HTTP/3)")
 		tlsKeyFile     = flag.String("tls-key", "", "Path to TLS private key file (required for HTTP/3)")
 		enableZstd     = flag.Bool("enable-zstd", true, "Enable zstd compression")
+		webDir         = flag.String("web-dir", "", "Web directory path (default: ./web for development, /usr/share/pertisk-chart/web for packages)")
 	)
 	flag.Parse()
 
@@ -97,6 +98,18 @@ func main() {
 		log.Println("Warning: Using default JWT secret. Set JWT_SECRET environment variable or --jwt-secret flag for production.")
 	}
 
+	// Set default web directory if not provided
+	webDirPath := *webDir
+	if webDirPath == "" {
+		// Check if /usr/share/pertisk-chart/web exists (package installation)
+		if _, err := os.Stat("/usr/share/pertisk-chart/web"); err == nil {
+			webDirPath = "/usr/share/pertisk-chart/web"
+		} else {
+			// Default to ./web for development
+			webDirPath = "./web"
+		}
+	}
+
 	// Create API server
 	server := api.NewServer(store, userStore, configStore, &api.Config{
 		Port:          *port,
@@ -106,6 +119,7 @@ func main() {
 		TLSCertFile:   *tlsCertFile,
 		TLSKeyFile:    *tlsKeyFile,
 		EnableZstd:    *enableZstd,
+		WebDir:        webDirPath,
 	})
 
 	// Start server

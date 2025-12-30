@@ -31,6 +31,7 @@ type Config struct {
 	TLSCertFile   string
 	TLSKeyFile    string
 	EnableZstd    bool
+	WebDir        string
 }
 
 // Server represents the API server
@@ -110,8 +111,15 @@ func (s *Server) startHTTP3(addr string, handler http.Handler) error {
 
 // setupRoutes configures all API routes
 func (s *Server) setupRoutes() {
+	// Determine web directory path
+	webDir := s.config.WebDir
+	if webDir == "" {
+		// Default to ./web for development
+		webDir = "./web"
+	}
+	
 	// Serve static files (UI assets)
-	s.router.Static("/static", "./web/static")
+	s.router.Static("/static", filepath.Join(webDir, "static"))
 
 	// API routes
 	api := s.router.Group("/api")
@@ -205,7 +213,11 @@ func (s *Server) setupRoutes() {
 		}
 		
 		// Serve index.html for all other routes (client-side routing)
-		c.File("./web/index.html")
+		webDir := s.config.WebDir
+		if webDir == "" {
+			webDir = "./web"
+		}
+		c.File(filepath.Join(webDir, "index.html"))
 	})
 }
 

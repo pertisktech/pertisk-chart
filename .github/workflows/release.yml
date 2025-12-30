@@ -84,9 +84,13 @@ jobs:
           mkdir -p pkg/var/lib/pertisk-chart
           mkdir -p pkg/var/log/pertisk-chart
           mkdir -p pkg/lib/systemd/system
+          mkdir -p pkg/usr/share/pertisk-chart
           
           cp ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} pkg/usr/bin/${{ env.BINARY_NAME }}
           chmod +x pkg/usr/bin/${{ env.BINARY_NAME }}
+          
+          # Copy web files
+          cp -r web pkg/usr/share/pertisk-chart/
 
       - name: Create systemd service file
         run: |
@@ -177,6 +181,12 @@ jobs:
           chown pertisk-chart:pertisk-chart /var/lib/pertisk-chart/chartstorage
           chmod 750 /var/lib/pertisk-chart/chartstorage
           
+          # Set permissions on web directory (read-only for service user)
+          if [ -d /usr/share/pertisk-chart/web ]; then
+              chown -R root:root /usr/share/pertisk-chart/web
+              chmod -R 755 /usr/share/pertisk-chart/web
+          fi
+          
           # Grant capability to bind to privileged ports if needed
           if command -v setcap >/dev/null 2>&1; then
               setcap 'cap_net_bind_service=+ep' /usr/bin/pertisk-chart
@@ -241,6 +251,7 @@ jobs:
             --config-files /etc/pertisk-chart/config.conf \
             --directories /var/lib/pertisk-chart \
             --directories /var/log/pertisk-chart \
+            --directories /usr/share/pertisk-chart \
             --deb-systemd-enable \
             --deb-no-default-config-files \
             -C pkg \
@@ -266,6 +277,7 @@ jobs:
             --config-files /etc/pertisk-chart/config.conf \
             --directories /var/lib/pertisk-chart \
             --directories /var/log/pertisk-chart \
+            --directories /usr/share/pertisk-chart \
             --rpm-os linux \
             -C pkg \
             .
