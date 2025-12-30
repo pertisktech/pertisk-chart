@@ -64,6 +64,7 @@ jobs:
               apt-get update && \
               apt-get install -y gcc libc6-dev && \
               go build -a \
+                -buildvcs=false \
                 -ldflags='-s -w' \
                 -tags 'osusergo netgo' \
                 -o ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} \
