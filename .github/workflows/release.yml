@@ -1,35 +1,33 @@
-name: Release
+name: Release Packages
 
 on:
   push:
     tags:
-      - 'v*'  # Triggers on tags like v1.0.0, v1.2.3, etc.
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: '1.21'
+  BINARY_NAME: pertisk-chart
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}/${{ matrix.arch }}
+    name: Build ${{ matrix.goarch }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: linux
-            arch: amd64
-            binary_name: pertisk-chart-linux-amd64
-          - os: linux
-            arch: arm64
-            binary_name: pertisk-chart-linux-arm64
-          - os: darwin
-            arch: amd64
-            binary_name: pertisk-chart-darwin-amd64
-          - os: darwin
-            arch: arm64
-            binary_name: pertisk-chart-darwin-arm64
-          - os: windows
-            arch: amd64
-            binary_name: pertisk-chart-windows-amd64.exe
-          - os: windows
-            arch: arm64
-            binary_name: pertisk-chart-windows-arm64.exe
+          - goarch: amd64
+            deb_arch: amd64
+            rpm_arch: x86_64
+            cc: gcc
+          - goarch: arm64
+            deb_arch: arm64
+            rpm_arch: aarch64
+            cc: aarch64-linux-gnu-gcc
 
     steps:
       - name: Checkout code
@@ -38,65 +36,350 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Get dependencies
-        run: go mod download
+      - name: Set up QEMU for multi-arch builds
+        uses: docker/setup-qemu-action@v3
 
-      - name: Build
-        env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: 0
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build binary with static linking (musl)
         run: |
-          go build -ldflags="-s -w" -o ${{ matrix.binary_name }} ./cmd/server
+          # Use Alpine (musl libc) to build statically linked binary
+          # SQLite works with musl, so we can use static linking for maximum compatibility
+          PLATFORM="linux/${{ matrix.goarch }}"
+          
+          docker run --rm --platform $PLATFORM \
+            -v ${{ github.workspace }}:/app \
+            -w /app \
+            -e GOOS=linux \
+            -e GOARCH=${{ matrix.goarch }} \
+            -e CGO_ENABLED=1 \
+            -e GOTOOLCHAIN=auto \
+            golang:alpine \
+            sh -c "
+              apk add --no-cache gcc g++ musl-dev && \
+              go build -a \
+                -ldflags='-linkmode external -extldflags \"-static\" -s -w' \
+                -o ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} \
+                ./cmd/server
+            "
 
-      - name: Create checksum
-        shell: bash
+      - name: Install packaging tools
         run: |
-          if [[ "${{ matrix.os }}" == "windows" ]]; then
-            sha256sum ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
-          else
-            shasum -a 256 ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
+          sudo apt-get update
+          sudo apt-get install -y rpm ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
+
+      - name: Create package directories
+        run: |
+          mkdir -p pkg/usr/bin
+          mkdir -p pkg/etc/pertisk-chart
+          mkdir -p pkg/var/lib/pertisk-chart
+          mkdir -p pkg/var/log/pertisk-chart
+          mkdir -p pkg/lib/systemd/system
+          
+          cp ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} pkg/usr/bin/${{ env.BINARY_NAME }}
+          chmod +x pkg/usr/bin/${{ env.BINARY_NAME }}
+
+      - name: Create systemd service file
+        run: |
+          cat > pkg/lib/systemd/system/pertisk-chart.service << 'EOF'
+          [Unit]
+          Description=Pertisk Helm Chart Repository Server
+          After=network.target
+          
+          [Service]
+          Type=simple
+          User=pertisk-chart
+          Group=pertisk-chart
+          ExecStart=/usr/bin/pertisk-chart \
+            --port=7080 \
+            --data-dir=/var/lib/pertisk-chart \
+            --storage-local-rootdir=/var/lib/pertisk-chart/chartstorage
+          Restart=always
+          RestartSec=5
+          LimitNOFILE=65535
+          
+          # Allow binding to privileged ports if needed
+          AmbientCapabilities=CAP_NET_BIND_SERVICE
+          CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+          
+          # Security hardening
+          ProtectSystem=strict
+          ProtectHome=true
+          ReadWritePaths=/var/lib/pertisk-chart /var/log/pertisk-chart
+          PrivateTmp=true
+          
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+      - name: Create config file
+        run: |
+          cat > pkg/etc/pertisk-chart/config.conf << 'EOF'
+          # Pertisk Chart Repository Configuration
+          # See documentation for all available options
+          
+          # Server port
+          PORT=7080
+          
+          # Data directory
+          DATA_DIR=/var/lib/pertisk-chart
+          
+          # Storage root directory
+          STORAGE_ROOT=/var/lib/pertisk-chart/chartstorage
+          
+          # Database type (sqlite, postgres, file)
+          DB_TYPE=sqlite
+          
+          # Database DSN (for SQLite: file path, for PostgreSQL: connection string)
+          # DB_DSN=/var/lib/pertisk-chart/users.db
+          EOF
+
+      - name: Create pre/post install scripts
+        run: |
+          # Pre-install script
+          cat > preinstall.sh << 'EOF'
+          #!/bin/sh
+          set -e
+          
+          # Create pertisk-chart user and group if they don't exist
+          if ! getent group pertisk-chart >/dev/null 2>&1; then
+              groupadd --system pertisk-chart
           fi
+          
+          if ! getent passwd pertisk-chart >/dev/null 2>&1; then
+              useradd --system --gid pertisk-chart --home-dir /var/lib/pertisk-chart \
+                  --shell /usr/sbin/nologin --comment "Pertisk Helm Chart Repository" pertisk-chart
+          fi
+          EOF
+          
+          # Post-install script
+          cat > postinstall.sh << 'EOF'
+          #!/bin/sh
+          set -e
+          
+          # Set proper permissions
+          chown -R pertisk-chart:pertisk-chart /var/lib/pertisk-chart
+          chown -R pertisk-chart:pertisk-chart /var/log/pertisk-chart
+          chmod 750 /var/lib/pertisk-chart
+          chmod 750 /var/log/pertisk-chart
+          
+          # Create chartstorage directory if it doesn't exist
+          mkdir -p /var/lib/pertisk-chart/chartstorage
+          chown pertisk-chart:pertisk-chart /var/lib/pertisk-chart/chartstorage
+          chmod 750 /var/lib/pertisk-chart/chartstorage
+          
+          # Grant capability to bind to privileged ports if needed
+          if command -v setcap >/dev/null 2>&1; then
+              setcap 'cap_net_bind_service=+ep' /usr/bin/pertisk-chart
+              echo "Granted network binding capability to pertisk-chart binary"
+          else
+              echo "Warning: setcap not found. Install libcap2-bin (Debian/Ubuntu) or libcap (RHEL/CentOS)"
+              echo "Then run: sudo setcap 'cap_net_bind_service=+ep' /usr/bin/pertisk-chart"
+          fi
+          
+          # Reload systemd
+          if command -v systemctl >/dev/null 2>&1; then
+              systemctl daemon-reload
+              echo ""
+              echo "Pertisk Chart Repository has been installed successfully!"
+              echo ""
+              echo "To start the service:"
+              echo "  sudo systemctl start pertisk-chart"
+              echo ""
+              echo "To enable on boot:"
+              echo "  sudo systemctl enable pertisk-chart"
+              echo ""
+              echo "To check status:"
+              echo "  sudo systemctl status pertisk-chart"
+              echo ""
+          fi
+          EOF
+          
+          # Pre-remove script
+          cat > preremove.sh << 'EOF'
+          #!/bin/sh
+          set -e
+          
+          # Stop service if running
+          if command -v systemctl >/dev/null 2>&1; then
+              if systemctl is-active --quiet pertisk-chart; then
+                  systemctl stop pertisk-chart
+              fi
+              if systemctl is-enabled --quiet pertisk-chart 2>/dev/null; then
+                  systemctl disable pertisk-chart
+              fi
+          fi
+          EOF
+          
+          chmod +x preinstall.sh postinstall.sh preremove.sh
+
+      - name: Build DEB package
+        run: |
+          fpm -s dir -t deb \
+            -n ${{ env.BINARY_NAME }} \
+            -v ${{ steps.version.outputs.VERSION }} \
+            -a ${{ matrix.deb_arch }} \
+            --description "Helm Chart Repository Server with Web UI" \
+            --url "https://github.com/${{ github.repository }}" \
+            --maintainer "Pertisk Team" \
+            --license "MIT" \
+            --vendor "Pertisk" \
+            --category "net" \
+            --depends libcap2-bin \
+            --before-install preinstall.sh \
+            --after-install postinstall.sh \
+            --before-remove preremove.sh \
+            --config-files /etc/pertisk-chart/config.conf \
+            --directories /var/lib/pertisk-chart \
+            --directories /var/log/pertisk-chart \
+            --deb-systemd-enable \
+            --deb-no-default-config-files \
+            -C pkg \
+            .
+
+      - name: Build RPM package
+        run: |
+          fpm -s dir -t rpm \
+            -n ${{ env.BINARY_NAME }} \
+            -v ${{ steps.version.outputs.VERSION }} \
+            -a ${{ matrix.rpm_arch }} \
+            --description "Helm Chart Repository Server with Web UI" \
+            --url "https://github.com/${{ github.repository }}" \
+            --maintainer "Pertisk Team" \
+            --license "MIT" \
+            --vendor "Pertisk" \
+            --category "System Environment/Daemons" \
+            --depends libcap \
+            --depends shadow-utils \
+            --before-install preinstall.sh \
+            --after-install postinstall.sh \
+            --before-remove preremove.sh \
+            --config-files /etc/pertisk-chart/config.conf \
+            --directories /var/lib/pertisk-chart \
+            --directories /var/log/pertisk-chart \
+            --rpm-os linux \
+            -C pkg \
+            .
+
+      - name: Create tarball
+        run: |
+          tar -czvf ${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}-linux-${{ matrix.goarch }}.tar.gz \
+            -C pkg/usr/bin ${{ env.BINARY_NAME }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.binary_name }}
+          name: packages-linux-${{ matrix.goarch }}
           path: |
-            ${{ matrix.binary_name }}
-            ${{ matrix.binary_name }}.sha256
-          retention-days: 30
+            *.deb
+            *.rpm
+            *.tar.gz
+          retention-days: 1
 
   release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts
+          path: packages
+          merge-multiple: true
 
-      - name: Get tag name
-        id: tag
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: List packages
+        run: |
+          echo "=== Listing packages directory ==="
+          ls -laR packages/ || echo "packages directory not found"
+          echo "=== Current directory ==="
+          ls -la
+
+      - name: Generate checksums
+        run: |
+          cd packages
+          sha256sum *.deb *.rpm *.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: Release ${{ steps.tag.outputs.tag }}
-          files: |
-            artifacts/**/*
+          name: Release v${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           generate_release_notes: true
+          files: |
+            packages/*.deb
+            packages/*.rpm
+            packages/*.tar.gz
+            packages/SHA256SUMS.txt
+          body: |
+            ## Installation
+
+            ### Debian/Ubuntu (amd64)
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/pertisk-chart_${{ steps.version.outputs.VERSION }}_amd64.deb
+            sudo dpkg -i pertisk-chart_${{ steps.version.outputs.VERSION }}_amd64.deb
+            ```
+
+            ### Debian/Ubuntu (arm64)
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/pertisk-chart_${{ steps.version.outputs.VERSION }}_arm64.deb
+            sudo dpkg -i pertisk-chart_${{ steps.version.outputs.VERSION }}_arm64.deb
+            ```
+
+            ### RHEL/CentOS/AlmaLinux (x86_64)
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/pertisk-chart-${{ steps.version.outputs.VERSION }}-1.x86_64.rpm
+            sudo rpm -i pertisk-chart-${{ steps.version.outputs.VERSION }}-1.x86_64.rpm
+            ```
+
+            ### RHEL/CentOS/AlmaLinux (aarch64)
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/pertisk-chart-${{ steps.version.outputs.VERSION }}-1.aarch64.rpm
+            sudo rpm -i pertisk-chart-${{ steps.version.outputs.VERSION }}-1.aarch64.rpm
+            ```
+
+            ### Binary (manual installation)
+            Download the appropriate tarball for your architecture and extract it:
+            ```bash
+            tar -xzf pertisk-chart-${{ steps.version.outputs.VERSION }}-linux-amd64.tar.gz
+            sudo mv pertisk-chart /usr/local/bin/
+            ```
+
+            ## Post Installation
+            ```bash
+            # Start the service
+            sudo systemctl start pertisk-chart
+
+            # Enable on boot
+            sudo systemctl enable pertisk-chart
+
+            # Check status
+            sudo systemctl status pertisk-chart
+            ```
+
+            ## Configuration
+            The service runs on port 7080 by default. Configuration file is located at:
+            `/etc/pertisk-chart/config.conf`
+
+            Charts are stored in:
+            `/var/lib/pertisk-chart/chartstorage`
+
+            ## Verify Checksums
+            ```bash
+            sha256sum -c SHA256SUMS.txt
+            ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
