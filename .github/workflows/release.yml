@@ -55,12 +55,14 @@ jobs:
           # Use Debian-based image with glibc for SQLite3 compatibility
           # SQLite3 requires glibc features (pread64/pwrite64) not available in musl
           # We use dynamic linking for glibc but static linking for other libraries
+          # For CGO cross-compilation, we build on the target platform to use native compiler
           PLATFORM="linux/${{ matrix.goarch }}"
           BINARY_NAME="${{ env.BINARY_NAME }}"
           
           # Create a Dockerfile for better caching
+          # Build on target platform to get native compiler (slower but more reliable for CGO)
           cat > Dockerfile.build << DOCKERFILE
-          FROM --platform=\$BUILDPLATFORM golang:1.21-bookworm AS base
+          FROM golang:1.21-bookworm AS base
           RUN apt-get update && \
               apt-get install -y --no-install-recommends gcc libc6-dev && \
               apt-get clean && \
@@ -75,32 +77,29 @@ jobs:
           # Copy source
           COPY . .
           
-          # Build binaries
-          ARG TARGETOS=linux
-          ARG TARGETARCH
+          # Build binaries (using native compiler for the target platform)
           ARG BINARY_NAME
           RUN mkdir -p /out
           RUN --mount=type=cache,target=/root/.cache/go-build \
               --mount=type=cache,target=/go/pkg/mod \
-              CGO_ENABLED=1 GOOS=\$TARGETOS GOARCH=\$TARGETARCH \
+              CGO_ENABLED=1 \
               go build -a -buildvcs=false -ldflags='-s -w' -tags 'osusergo netgo' \
-              -o /out/\${BINARY_NAME}-linux-\$TARGETARCH ./cmd/server && \
-              CGO_ENABLED=1 GOOS=\$TARGETOS GOARCH=\$TARGETARCH \
+              -o /out/\${BINARY_NAME}-linux-\$(go env GOARCH) ./cmd/server && \
+              CGO_ENABLED=1 \
               go build -a -buildvcs=false -ldflags='-s -w' -tags 'osusergo netgo' \
-              -o /out/pertisk-chart-create-admin-linux-\$TARGETARCH ./cmd/create-admin
+              -o /out/pertisk-chart-create-admin-linux-\$(go env GOARCH) ./cmd/create-admin
           
           FROM scratch AS export
           COPY --from=base /out /
           DOCKERFILE
           
           # Build with GitHub Actions cache
+          # Using target platform ensures native compiler is available
           docker buildx build \
             --platform $PLATFORM \
             --output type=local,dest=. \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
-            --build-arg TARGETOS=linux \
-            --build-arg TARGETARCH=${{ matrix.goarch }} \
             --build-arg BINARY_NAME=$BINARY_NAME \
             -f Dockerfile.build \
             .
