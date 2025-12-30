@@ -45,7 +45,7 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build binary with static linking
+      - name: Build binaries with static linking
         run: |
           # Use Debian-based image with glibc for SQLite3 compatibility
           # SQLite3 requires glibc features (pread64/pwrite64) not available in musl
@@ -68,7 +68,13 @@ jobs:
                 -ldflags='-s -w' \
                 -tags 'osusergo netgo' \
                 -o ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} \
-                ./cmd/server
+                ./cmd/server && \
+              go build -a \
+                -buildvcs=false \
+                -ldflags='-s -w' \
+                -tags 'osusergo netgo' \
+                -o pertisk-chart-create-admin-linux-${{ matrix.goarch }} \
+                ./cmd/create-admin
             "
 
       - name: Install packaging tools
@@ -88,6 +94,10 @@ jobs:
           
           cp ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} pkg/usr/bin/${{ env.BINARY_NAME }}
           chmod +x pkg/usr/bin/${{ env.BINARY_NAME }}
+          
+          # Copy create-admin binary
+          cp pertisk-chart-create-admin-linux-${{ matrix.goarch }} pkg/usr/bin/pertisk-chart-create-admin
+          chmod +x pkg/usr/bin/pertisk-chart-create-admin
           
           # Copy web files
           cp -r web pkg/usr/share/pertisk-chart/
@@ -202,7 +212,15 @@ jobs:
               echo ""
               echo "Pertisk Chart Repository has been installed successfully!"
               echo ""
-              echo "To start the service:"
+              echo "IMPORTANT: Create an admin user before starting the service:"
+              echo "  sudo pertisk-chart-create-admin \\"
+              echo "    -username admin \\"
+              echo "    -email admin@example.com \\"
+              echo "    -password your-secure-password \\"
+              echo "    -data-dir /var/lib/pertisk-chart \\"
+              echo "    -db-type sqlite"
+              echo ""
+              echo "Then start the service:"
               echo "  sudo systemctl start pertisk-chart"
               echo ""
               echo "To enable on boot:"
@@ -375,6 +393,29 @@ jobs:
             ```
 
             ## Post Installation
+
+            ### Create Admin User
+            Before starting the service, create an admin user:
+            ```bash
+            sudo pertisk-chart-create-admin \
+              -username admin \
+              -email admin@example.com \
+              -password your-secure-password \
+              -data-dir /var/lib/pertisk-chart \
+              -db-type sqlite
+            ```
+
+            For PostgreSQL:
+            ```bash
+            sudo pertisk-chart-create-admin \
+              -username admin \
+              -email admin@example.com \
+              -password your-secure-password \
+              -db-type postgres \
+              -db-dsn "host=localhost user=postgres password=secret dbname=pertisk port=5432 sslmode=disable"
+            ```
+
+            ### Start Service
             ```bash
             # Start the service
             sudo systemctl start pertisk-chart
