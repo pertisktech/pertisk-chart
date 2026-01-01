@@ -223,12 +223,15 @@ async function loadCharts() {
         if (!response.ok) throw new Error('Failed to load charts');
         
         const data = await response.json();
-        state.charts = data;
-        state.filteredCharts = data;
+        state.charts = Array.isArray(data) ? data : [];
+        state.filteredCharts = Array.isArray(data) ? data : [];
         renderCharts();
     } catch (error) {
         console.error('Error loading charts:', error);
         showError('Failed to load charts. Please refresh the page.');
+        // Ensure state remains as arrays even on error
+        state.charts = state.charts || [];
+        state.filteredCharts = state.filteredCharts || [];
     }
 }
 
@@ -238,6 +241,11 @@ function renderCharts() {
     const emptyState = document.getElementById('emptyState');
     
     if (!grid) return;
+
+    // Ensure filteredCharts is an array
+    if (!state.filteredCharts || !Array.isArray(state.filteredCharts)) {
+        state.filteredCharts = [];
+    }
 
     if (state.filteredCharts.length === 0) {
         grid.style.display = 'none';
@@ -1841,6 +1849,11 @@ async function deleteChart(name, version) {
 
 // Update statistics
 function updateStats() {
+    // Ensure charts is an array
+    if (!state.charts || !Array.isArray(state.charts)) {
+        state.charts = [];
+    }
+    
     const totalCharts = state.charts.length;
     const totalVersions = state.charts.reduce((sum, chart) => 
         sum + (chart.versions ? chart.versions.length : 0), 0
