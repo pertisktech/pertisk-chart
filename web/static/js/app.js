@@ -3043,7 +3043,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Theme Management
 function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
 }
 
@@ -3069,7 +3069,7 @@ function updateCodeMirrorThemes(theme) {
 }
 
 function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
 }
