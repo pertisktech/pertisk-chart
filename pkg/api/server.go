@@ -132,6 +132,9 @@ func (s *Server) setupRoutes() {
 		api.GET("/charts/:name/:version/values", s.handleGetValues)
 		api.GET("/charts/:name/:version/values.yaml", s.handleDownloadValues)
 		api.GET("/charts/:name/:version/readme", s.handleGetReadme)
+		api.GET("/charts/:name/:version/manifests", s.handleGetManifests)
+		api.GET("/charts/:name/:version/resources", s.handleGetResources)
+		api.GET("/charts/:name/:version/notes", s.handleGetNotes)
 		
 		// Authentication routes
 		auth := api.Group("/auth")
@@ -485,6 +488,108 @@ func (s *Server) handleGetReadme(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"readme": string(readmeData),
 		"markdown": string(readmeData),
+	})
+}
+
+// handleGetManifests returns the rendered manifests as YAML
+func (s *Server) handleGetManifests(c *gin.Context) {
+	name := c.Param("name")
+	version := c.Param("version")
+	filename := fmt.Sprintf("%s-%s.tgz", name, version)
+
+	if !s.storage.ChartExists(filename) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
+		return
+	}
+
+	reader, err := s.storage.GetChart(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Extract manifests
+	manifestsData, err := chart.ExtractManifests(reader)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("manifests not found: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"manifests": string(manifestsData),
+		"yaml":      string(manifestsData),
+	})
+}
+
+// handleGetResources returns the list of Kubernetes resources
+func (s *Server) handleGetResources(c *gin.Context) {
+	name := c.Param("name")
+	version := c.Param("version")
+	filename := fmt.Sprintf("%s-%s.tgz", name, version)
+
+	if !s.storage.ChartExists(filename) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
+		return
+	}
+
+	reader, err := s.storage.GetChart(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Extract resources
+	resources, err := chart.ExtractResources(reader)
+	if err != nil {
+		// If it's a "no templates found" error, return empty list instead of 404
+		if strings.Contains(err.Error(), "no template files found") {
+			c.JSON(http.StatusOK, gin.H{
+				"resources": []chart.ResourceInfo{},
+				"message":  "This chart does not have template files in the templates/ directory",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to extract resources: %v", err)})
+		return
+	}
+
+	// Return empty list if no resources could be parsed (templates may contain only Helm syntax)
+	c.JSON(http.StatusOK, gin.H{
+		"resources": resources,
+		"count":     len(resources),
+	})
+}
+
+// handleGetNotes returns the NOTES.txt file
+func (s *Server) handleGetNotes(c *gin.Context) {
+	name := c.Param("name")
+	version := c.Param("version")
+	filename := fmt.Sprintf("%s-%s.tgz", name, version)
+
+	if !s.storage.ChartExists(filename) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chart not found"})
+		return
+	}
+
+	reader, err := s.storage.GetChart(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Extract NOTES.txt
+	notesData, err := chart.ExtractNOTES(reader)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("NOTES.txt not found: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"notes": string(notesData),
+		"text":  string(notesData),
 	})
 }
 

@@ -554,6 +554,32 @@ function renderChartDetailContent(chart) {
                     </svg>
                     Default Values
                 </button>
+                <button class="chart-detail-tab" data-tab="resources" onclick="switchChartDetailTab('resources')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                    </svg>
+                    Resources
+                </button>
+                <button class="chart-detail-tab" data-tab="manifests" onclick="switchChartDetailTab('manifests')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Manifests
+                </button>
+                <button class="chart-detail-tab" data-tab="notes" onclick="switchChartDetailTab('notes')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Notes
+                </button>
             </div>
             
             <!-- Versions Tab Content -->
@@ -941,6 +967,143 @@ function renderChartDetailContent(chart) {
             </div>
                 </div>
             </div>
+            
+            <!-- Resources Tab Content -->
+            <div class="chart-detail-tab-content" id="chart-detail-resources">
+                <div class="resources-section" id="resourcesSection-${chart.name}">
+                    <div class="section-header-inline">
+                        <h2 class="section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="3" x2="9" y2="21"></line>
+                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                            </svg>
+                            Kubernetes Resources
+                        </h2>
+                    </div>
+                    <div class="resources-content" id="resourcesContent-${chart.name}">
+                        <div class="resources-loading" id="resourcesLoading-${chart.name}">
+                            <div class="empty-state">
+                                <p>Loading resources...</p>
+                            </div>
+                        </div>
+                        <div class="resources-error" id="resourcesError-${chart.name}" style="display: none;">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md); opacity: 0.5;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                <h3>No Resources Found</h3>
+                                <p>This chart may not have template files in the templates/ directory, or the templates contain only Helm template syntax that cannot be parsed without rendering.</p>
+                                <p style="margin-top: var(--spacing-sm); font-size: var(--font-size-sm); color: var(--text-muted);">
+                                    Tip: Check the "Manifests" tab to see the raw template files.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="resources-table-container" id="resourcesTable-${chart.name}" style="display: none;">
+                            <table class="resources-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kind</th>
+                                        <th>Name</th>
+                                        <th>Namespace</th>
+                                        <th>API Version</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resourcesTableBody-${chart.name}">
+                                    <!-- Resources will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manifests Tab Content -->
+            <div class="chart-detail-tab-content" id="chart-detail-manifests">
+                <div class="manifests-section" id="manifestsSection-${chart.name}">
+                    <div class="section-header-inline">
+                        <h2 class="section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Manifests
+                        </h2>
+                    </div>
+                    <div class="manifests-content" id="manifestsContent-${chart.name}">
+                        <div class="manifests-loading" id="manifestsLoading-${chart.name}">
+                            <div class="empty-state">
+                                <p>Loading manifests...</p>
+                            </div>
+                        </div>
+                        <div class="manifests-error" id="manifestsError-${chart.name}" style="display: none;">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md); opacity: 0.5;">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <h3>No Manifests Found</h3>
+                                <p>This chart may not have template files.</p>
+                            </div>
+                        </div>
+                        <div class="manifests-display" id="manifestsDisplay-${chart.name}" style="display: none;">
+                            <div class="yaml-editor-container">
+                                <div class="code-header">
+                                    <span class="code-lang">yaml</span>
+                                    <div class="editor-actions">
+                                        <button class="copy-btn" onclick="copyYamlContent('manifests-editor-${chart.name}', this)" title="Copy manifests">
+                                            <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                            </svg>
+                                            <span class="copy-text">Copy</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <textarea id="manifests-editor-${chart.name}" class="yaml-editor-textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes Tab Content -->
+            <div class="chart-detail-tab-content" id="chart-detail-notes">
+                <div class="notes-section" id="notesSection-${chart.name}">
+                    <div class="section-header-inline">
+                        <h2 class="section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Installation Notes
+                        </h2>
+                    </div>
+                    <div class="notes-content" id="notesContent-${chart.name}">
+                        <div class="notes-loading" id="notesLoading-${chart.name}">
+                            <div class="empty-state">
+                                <p>Loading notes...</p>
+                            </div>
+                        </div>
+                        <div class="notes-error" id="notesError-${chart.name}" style="display: none;">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md); opacity: 0.5;">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <h3>No Notes Available</h3>
+                                <p>This chart does not have a NOTES.txt file.</p>
+                            </div>
+                        </div>
+                        <div class="notes-display" id="notesDisplay-${chart.name}" style="display: none;">
+                            <pre class="notes-text" id="notesText-${chart.name}"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         </div>
     `;
@@ -996,6 +1159,36 @@ function switchChartDetailTab(tabName) {
             : null;
         if (latestVersion) {
             loadReadme(state.currentChart.name, latestVersion.version);
+        }
+    }
+    
+    // Load resources if resources tab is selected
+    if (tabName === 'resources' && state.currentChart) {
+        const latestVersion = state.currentChart.versions && state.currentChart.versions.length > 0 
+            ? state.currentChart.versions[0] 
+            : null;
+        if (latestVersion) {
+            loadResources(state.currentChart.name, latestVersion.version);
+        }
+    }
+    
+    // Load manifests if manifests tab is selected
+    if (tabName === 'manifests' && state.currentChart) {
+        const latestVersion = state.currentChart.versions && state.currentChart.versions.length > 0 
+            ? state.currentChart.versions[0] 
+            : null;
+        if (latestVersion) {
+            loadManifests(state.currentChart.name, latestVersion.version);
+        }
+    }
+    
+    // Load notes if notes tab is selected
+    if (tabName === 'notes' && state.currentChart) {
+        const latestVersion = state.currentChart.versions && state.currentChart.versions.length > 0 
+            ? state.currentChart.versions[0] 
+            : null;
+        if (latestVersion) {
+            loadNotes(state.currentChart.name, latestVersion.version);
         }
     }
 }
@@ -1193,6 +1386,321 @@ async function loadDefaultValues(chartName, version) {
             `;
             loadBtn.disabled = false;
         }
+    }
+}
+
+// Load resources for a chart
+async function loadResources(chartName, version) {
+    const resourcesContent = document.getElementById(`resourcesContent-${chartName}`);
+    const resourcesLoading = document.getElementById(`resourcesLoading-${chartName}`);
+    const resourcesError = document.getElementById(`resourcesError-${chartName}`);
+    const resourcesTable = document.getElementById(`resourcesTable-${chartName}`);
+    const resourcesTableBody = document.getElementById(`resourcesTableBody-${chartName}`);
+    
+    if (!resourcesContent || !resourcesLoading || !resourcesError || !resourcesTable || !resourcesTableBody) {
+        return;
+    }
+    
+    // Show loading state
+    resourcesLoading.style.display = 'block';
+    resourcesError.style.display = 'none';
+    resourcesTable.style.display = 'none';
+    
+    try {
+        const response = await fetch(`/api/charts/${encodeURIComponent(chartName)}/${encodeURIComponent(version)}/resources`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                resourcesLoading.style.display = 'none';
+                resourcesError.style.display = 'block';
+                return;
+            }
+            throw new Error(`Failed to load resources: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const resources = data.resources || [];
+        const message = data.message || '';
+        
+        if (resources.length === 0) {
+            resourcesLoading.style.display = 'none';
+            resourcesError.style.display = 'block';
+            // Update error message if provided
+            if (message) {
+                const errorText = resourcesError.querySelector('p');
+                if (errorText) {
+                    errorText.textContent = message;
+                }
+            }
+            return;
+        }
+        
+        // Render resources table
+        resourcesTableBody.innerHTML = resources.map((resource, index) => {
+            const namespace = resource.namespace || '<default>';
+            return `
+                <tr class="resource-row" onclick="showResourceDetails('${chartName}', '${version}', ${index})" style="cursor: pointer;">
+                    <td><span class="resource-kind">${escapeHtml(resource.kind || 'Unknown')}</span></td>
+                    <td><strong>${escapeHtml(resource.name || 'Unknown')}</strong></td>
+                    <td>${escapeHtml(namespace)}</td>
+                    <td><code>${escapeHtml(resource.apiVersion || 'Unknown')}</code></td>
+                    <td>
+                        <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); showResourceDetails('${chartName}', '${version}', ${index})" title="View Details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Details
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // Store resources in a global variable for details view
+        if (!window.chartResources) window.chartResources = {};
+        window.chartResources[`${chartName}-${version}`] = resources;
+        
+        // Hide loading, show table
+        resourcesLoading.style.display = 'none';
+        resourcesError.style.display = 'none';
+        resourcesTable.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading resources:', error);
+        resourcesLoading.style.display = 'none';
+        resourcesError.style.display = 'block';
+    }
+}
+
+// Show resource details in a modal
+function showResourceDetails(chartName, version, resourceIndex) {
+    const key = `${chartName}-${version}`;
+    const resources = window.chartResources?.[key];
+    if (!resources || !resources[resourceIndex]) {
+        alert('Resource details not available');
+        return;
+    }
+    
+    const resource = resources[resourceIndex];
+    const manifest = resource.manifest || '';
+    
+    // Create modal HTML
+    const modalHTML = `
+        <div class="modal" id="resourceDetailsModal" style="display: flex;">
+            <div class="modal-content" style="max-width: 90%; max-height: 90vh; overflow: auto;">
+                <div class="modal-header">
+                    <h3>Resource Details: ${escapeHtml(resource.kind)}/${escapeHtml(resource.name)}</h3>
+                    <button class="modal-close" onclick="closeResourceDetailsModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="resource-details-info" style="margin-bottom: var(--spacing-md);">
+                        <div class="detail-row">
+                            <strong>Kind:</strong> <span>${escapeHtml(resource.kind || 'Unknown')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Name:</strong> <span>${escapeHtml(resource.name || 'Unknown')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Namespace:</strong> <span>${escapeHtml(resource.namespace || '<default>')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>API Version:</strong> <code>${escapeHtml(resource.apiVersion || 'Unknown')}</code>
+                        </div>
+                    </div>
+                    <div class="resource-manifest-section">
+                        <h4>Manifest</h4>
+                        <div class="yaml-editor-container">
+                            <div class="code-header">
+                                <span class="code-lang">yaml</span>
+                                <button class="copy-btn" onclick="copyResourceManifest()" title="Copy manifest">
+                                    <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    <span class="copy-text">Copy</span>
+                                </button>
+                            </div>
+                            <textarea id="resourceManifestEditor" class="yaml-editor-textarea" readonly>${escapeHtml(manifest)}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeResourceDetailsModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('resourceDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Initialize CodeMirror for manifest
+    const textarea = document.getElementById('resourceManifestEditor');
+    if (textarea && typeof CodeMirror !== 'undefined') {
+        const editor = CodeMirror.fromTextArea(textarea, {
+            mode: 'yaml',
+            theme: 'none',
+            lineNumbers: true,
+            lineWrapping: true,
+            readOnly: true,
+            indentUnit: 2,
+            tabSize: 2,
+            viewportMargin: Infinity
+        });
+        editor.setValue(manifest);
+        textarea.cmEditor = editor;
+        setTimeout(() => editor.refresh(), 100);
+    }
+    
+    // Store manifest for copy function
+    window.currentResourceManifest = manifest;
+}
+
+// Close resource details modal
+function closeResourceDetailsModal() {
+    const modal = document.getElementById('resourceDetailsModal');
+    if (modal) {
+        modal.remove();
+    }
+    window.currentResourceManifest = null;
+}
+
+// Copy resource manifest
+async function copyResourceManifest() {
+    const manifest = window.currentResourceManifest || '';
+    try {
+        await navigator.clipboard.writeText(manifest);
+        alert('Manifest copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy manifest');
+    }
+}
+
+// Load manifests for a chart
+async function loadManifests(chartName, version) {
+    const manifestsContent = document.getElementById(`manifestsContent-${chartName}`);
+    const manifestsLoading = document.getElementById(`manifestsLoading-${chartName}`);
+    const manifestsError = document.getElementById(`manifestsError-${chartName}`);
+    const manifestsDisplay = document.getElementById(`manifestsDisplay-${chartName}`);
+    
+    if (!manifestsContent || !manifestsLoading || !manifestsError || !manifestsDisplay) {
+        return;
+    }
+    
+    // Show loading state
+    manifestsLoading.style.display = 'block';
+    manifestsError.style.display = 'none';
+    manifestsDisplay.style.display = 'none';
+    
+    try {
+        const response = await fetch(`/api/charts/${encodeURIComponent(chartName)}/${encodeURIComponent(version)}/manifests`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                manifestsLoading.style.display = 'none';
+                manifestsError.style.display = 'block';
+                return;
+            }
+            throw new Error(`Failed to load manifests: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const manifests = data.manifests || data.yaml || '';
+        
+        // Hide loading, show display
+        manifestsLoading.style.display = 'none';
+        manifestsError.style.display = 'none';
+        manifestsDisplay.style.display = 'block';
+        
+        // Initialize CodeMirror editor
+        const textarea = document.getElementById(`manifests-editor-${chartName}`);
+        if (textarea && typeof CodeMirror !== 'undefined') {
+            // Destroy existing editor if any
+            if (textarea.cmEditor) {
+                textarea.cmEditor.toTextArea();
+            }
+            
+            const editor = CodeMirror.fromTextArea(textarea, {
+                mode: 'yaml',
+                theme: 'none',
+                lineNumbers: true,
+                lineWrapping: true,
+                readOnly: true,
+                indentUnit: 2,
+                tabSize: 2,
+                viewportMargin: Infinity,
+                autoRefresh: true
+            });
+            
+            editor.setValue(manifests);
+            textarea.cmEditor = editor;
+            
+            setTimeout(() => {
+                editor.refresh();
+            }, 100);
+        } else if (textarea) {
+            textarea.value = manifests;
+        }
+        
+    } catch (error) {
+        console.error('Error loading manifests:', error);
+        manifestsLoading.style.display = 'none';
+        manifestsError.style.display = 'block';
+    }
+}
+
+// Load notes for a chart
+async function loadNotes(chartName, version) {
+    const notesContent = document.getElementById(`notesContent-${chartName}`);
+    const notesLoading = document.getElementById(`notesLoading-${chartName}`);
+    const notesError = document.getElementById(`notesError-${chartName}`);
+    const notesDisplay = document.getElementById(`notesDisplay-${chartName}`);
+    const notesText = document.getElementById(`notesText-${chartName}`);
+    
+    if (!notesContent || !notesLoading || !notesError || !notesDisplay || !notesText) {
+        return;
+    }
+    
+    // Show loading state
+    notesLoading.style.display = 'block';
+    notesError.style.display = 'none';
+    notesDisplay.style.display = 'none';
+    
+    try {
+        const response = await fetch(`/api/charts/${encodeURIComponent(chartName)}/${encodeURIComponent(version)}/notes`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                notesLoading.style.display = 'none';
+                notesError.style.display = 'block';
+                return;
+            }
+            throw new Error(`Failed to load notes: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const notes = data.notes || data.text || '';
+        
+        // Hide loading, show display
+        notesLoading.style.display = 'none';
+        notesError.style.display = 'none';
+        notesDisplay.style.display = 'block';
+        
+        // Display notes as preformatted text
+        notesText.textContent = notes;
+        
+    } catch (error) {
+        console.error('Error loading notes:', error);
+        notesLoading.style.display = 'none';
+        notesError.style.display = 'block';
     }
 }
 

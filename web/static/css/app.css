@@ -1316,6 +1316,10 @@ body {
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
     border-bottom: 2px solid var(--border-color);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
 }
 
 .chart-detail-tab {
@@ -2833,5 +2837,161 @@ textarea.form-input {
 
 [data-theme="dark"] .config-preview-value {
     background: rgba(0, 0, 0, 0.3);
+}
+
+/* Resources Table Styles */
+.resources-section {
+    padding: var(--spacing-lg);
+}
+
+.resources-table-container {
+    overflow-x: auto;
+    margin-top: var(--spacing-md);
+}
+
+.resources-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.resources-table thead {
+    background: var(--bg-tertiary);
+}
+
+.resources-table th {
+    padding: var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.resources-table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+}
+
+.resources-table tbody tr.resource-row {
+    transition: var(--transition);
+}
+
+.resources-table tbody tr.resource-row:hover {
+    background: var(--bg-secondary);
+    cursor: pointer;
+}
+
+.resources-table tbody tr.resource-row:last-child td {
+    border-bottom: none;
+}
+
+.resource-kind {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--primary);
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.resources-table code {
+    background: var(--bg-tertiary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
+/* Resource Details Modal */
+.resource-details-info {
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius);
+    margin-bottom: var(--spacing-lg);
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-base);
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.detail-row strong {
+    color: var(--text-primary);
+    min-width: 120px;
+    font-weight: 600;
+}
+
+.detail-row span,
+.detail-row code {
+    color: var(--text-secondary);
+}
+
+.resource-manifest-section {
+    margin-top: var(--spacing-lg);
+}
+
+.resource-manifest-section h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+}
+
+/* Notes Display */
+.notes-section {
+    padding: var(--spacing-lg);
+}
+
+.notes-text {
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .resources-table {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .resources-table thead {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .resources-table tbody tr.resource-row:hover {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .resource-details-info {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .notes-text {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
 }
 
