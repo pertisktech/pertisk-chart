@@ -17,25 +17,49 @@
         <!-- Navigation Header -->
         <nav class="navbar">
             <div class="nav-container">
-                <a href="/" class="nav-brand" onclick="event.preventDefault(); showView('home'); return false;" style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: var(--spacing-sm);">
-                    <img src="/static/images/logo.png" alt="Pertisk Charts" class="logo-icon" style="width: 32px; height: 32px; object-fit: contain;">
-                    <span class="brand-text">Pertisk Charts</span>
+                <a href="/" class="nav-brand" onclick="event.preventDefault(); showView('home'); return false;">
+                    <div class="brand-wrapper">
+                        <img src="/static/images/logo.png" alt="Pertisk Charts" class="logo-icon">
+                        <span class="brand-text">Pertisk Charts</span>
+                    </div>
                 </a>
-                <div class="nav-links" style="display: flex; gap: var(--spacing-md); align-items: center;">
-                    <a href="/charts" onclick="event.preventDefault(); showView('charts'); return false;" class="nav-link-item">Browse</a>
-                    <a href="/my-charts" id="myChartsLink" onclick="event.preventDefault(); showView('myCharts'); return false;" class="nav-link-item" style="display: none;">My Charts</a>
-                    <a href="/admin" id="adminLink" onclick="event.preventDefault(); showView('admin'); return false;" class="nav-link-item" style="display: none;">Admin</a>
+                
+                <div class="nav-links">
+                    <a href="/charts" onclick="event.preventDefault(); showView('charts'); return false;" class="nav-link-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-link-icon">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <span>Browse</span>
+                    </a>
+                    <a href="/my-charts" id="myChartsLink" onclick="event.preventDefault(); showView('myCharts'); return false;" class="nav-link-item" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-link-icon">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>My Charts</span>
+                    </a>
+                    <a href="/admin" id="adminLink" onclick="event.preventDefault(); showView('admin'); return false;" class="nav-link-item" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-link-icon">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        <span>Admin</span>
+                    </a>
                 </div>
+                
                 <div class="nav-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search charts...">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search charts...">
                 </div>
+                
                 <div class="nav-actions">
                     <!-- Theme Toggle -->
-                    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+                    <button class="nav-action-btn theme-toggle" id="themeToggle" title="Toggle dark mode">
                         <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -52,21 +76,120 @@
                         </svg>
                     </button>
                     
-                    <div id="authButtons" style="display: flex; gap: var(--spacing-sm);">
-                        <button class="btn-secondary" id="loginBtn">Login</button>
-                        <button class="btn-primary" id="registerBtn">Register</button>
+                    <div id="authButtons" class="auth-buttons">
+                        <button class="btn-nav-secondary" id="loginBtn">Login</button>
+                        <button class="btn-nav-primary" id="registerBtn">Register</button>
                     </div>
-                    <div id="userMenu" style="display: none; align-items: center; gap: var(--spacing-sm);">
-                        <span id="usernameDisplay" style="font-size: var(--font-size-sm); color: var(--text-secondary);"></span>
-                        <button class="btn-upload-modern" id="uploadBtn">
-                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    
+                    <div id="userMenu" class="user-menu" style="display: none;">
+                        <div class="user-menu-trigger" id="userMenuTrigger">
+                            <div class="user-avatar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <span id="usernameDisplay" class="username-display"></span>
+                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="user-menu-dropdown" id="userMenuDropdown">
+                            <button class="user-menu-item" id="uploadBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Upload Chart</span>
+                            </button>
+                            <div class="user-menu-divider"></div>
+                            <button class="user-menu-item" id="logoutBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                    <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div class="mobile-menu" id="mobileMenu">
+                <div class="mobile-menu-content">
+                    <div class="mobile-nav-links">
+                        <a href="/charts" onclick="event.preventDefault(); showView('charts'); toggleMobileMenu(); return false;" class="mobile-nav-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <span>Browse Charts</span>
+                        </a>
+                        <a href="/my-charts" id="mobileMyChartsLink" onclick="event.preventDefault(); showView('myCharts'); toggleMobileMenu(); return false;" class="mobile-nav-link" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            <span>My Charts</span>
+                        </a>
+                        <a href="/admin" id="mobileAdminLink" onclick="event.preventDefault(); showView('admin'); toggleMobileMenu(); return false;" class="mobile-nav-link" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            <span>Admin</span>
+                        </a>
+                    </div>
+                    <div class="mobile-search">
+                        <input type="text" id="mobileSearchInput" class="search-input" placeholder="Search charts...">
+                    </div>
+                    <div class="mobile-auth" id="mobileAuthButtons">
+                        <button class="btn-nav-secondary btn-full" id="mobileLoginBtn">Login</button>
+                        <button class="btn-nav-primary btn-full" id="mobileRegisterBtn">Register</button>
+                    </div>
+                    <div class="mobile-user-menu" id="mobileUserMenu" style="display: none;">
+                        <div class="mobile-user-info">
+                            <div class="user-avatar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <span id="mobileUsernameDisplay" class="username-display"></span>
+                        </div>
+                        <button class="mobile-user-action" id="mobileUploadBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="17 8 12 3 7 8"></polyline>
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
                             </svg>
-                            <span class="upload-text">Upload</span>
+                            <span>Upload Chart</span>
                         </button>
-                        <button class="btn-secondary btn-sm" id="logoutBtn">Logout</button>
+                        <button class="mobile-user-action" id="mobileLogoutBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            <span>Logout</span>
+                        </button>
                     </div>
                 </div>
             </div>

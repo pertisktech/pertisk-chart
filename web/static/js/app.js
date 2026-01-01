@@ -91,12 +91,6 @@ async function initializeApp() {
 
 // Event Listeners
 function setupEventListeners() {
-    // Search
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', handleSearch);
-    }
-
     // Initialize modern dropdowns
     initializeModernDropdowns();
 
@@ -135,7 +129,119 @@ function setupEventListeners() {
         themeToggle.addEventListener('click', toggleTheme);
     }
 
-    // Upload button
+    // Mobile menu toggle
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenuToggle && mobileMenu) {
+        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+    }
+
+    // User menu dropdown
+    const userMenuTrigger = document.getElementById('userMenuTrigger');
+    const userMenu = document.getElementById('userMenu');
+    if (userMenuTrigger && userMenu) {
+        userMenuTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenu.classList.toggle('active');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (userMenu && !userMenu.contains(e.target)) {
+                userMenu.classList.remove('active');
+            }
+        });
+    }
+
+    // Main search input - sync with mobile and handle search
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        // Close any open menus when clicking on search
+        searchInput.addEventListener('focus', () => {
+            // Close user menu dropdown if open
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu && userMenu.classList.contains('active')) {
+                userMenu.classList.remove('active');
+            }
+            // Close mobile menu if open
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu && mobileMenu.classList.contains('active')) {
+                toggleMobileMenu();
+            }
+        });
+        
+        // Handle search
+        searchInput.addEventListener('input', handleSearch);
+        
+        // Sync with mobile search
+        searchInput.addEventListener('input', (e) => {
+            const mobileSearch = document.getElementById('mobileSearchInput');
+            if (mobileSearch) {
+                mobileSearch.value = e.target.value;
+            }
+        });
+    }
+    
+    // Mobile search input - sync with main and close menus on focus
+    const mobileSearchInput = document.getElementById('mobileSearchInput');
+    if (mobileSearchInput) {
+        // Close menus when focusing on mobile search
+        mobileSearchInput.addEventListener('focus', () => {
+            // Close user menu dropdown if open
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu && userMenu.classList.contains('active')) {
+                userMenu.classList.remove('active');
+            }
+        });
+        
+        // Handle search and sync with main search
+        mobileSearchInput.addEventListener('input', (e) => {
+            handleSearch(e);
+            // Sync with main search
+            const mainSearch = document.getElementById('searchInput');
+            if (mainSearch) {
+                mainSearch.value = e.target.value;
+            }
+        });
+    }
+
+    // Mobile auth buttons
+    const mobileLoginBtn = document.getElementById('mobileLoginBtn');
+    const mobileRegisterBtn = document.getElementById('mobileRegisterBtn');
+    if (mobileLoginBtn) {
+        mobileLoginBtn.addEventListener('click', () => {
+            toggleMobileMenu();
+            showModal('loginModal');
+        });
+    }
+    if (mobileRegisterBtn) {
+        mobileRegisterBtn.addEventListener('click', () => {
+            toggleMobileMenu();
+            showModal('registerModal');
+        });
+    }
+
+    // Mobile upload and logout
+    const mobileUploadBtn = document.getElementById('mobileUploadBtn');
+    const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+    if (mobileUploadBtn) {
+        mobileUploadBtn.addEventListener('click', () => {
+            toggleMobileMenu();
+            if (!state.token) {
+                showModal('loginModal');
+                return;
+            }
+            showModal('uploadModal');
+        });
+    }
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.addEventListener('click', () => {
+            toggleMobileMenu();
+            handleLogout();
+        });
+    }
+
+    // Upload button (desktop)
     const uploadBtn = document.getElementById('uploadBtn');
     if (uploadBtn) {
         uploadBtn.addEventListener('click', () => {
@@ -308,6 +414,12 @@ function createChartCard(chart) {
 
 // Show chart detail view
 async function showChartDetail(chartName, shouldUpdateURL = true) {
+    // Close mobile menu if open
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenu && mobileMenu.classList.contains('active')) {
+        toggleMobileMenu();
+    }
+    
     const chart = state.charts.find(c => c.name === chartName);
     if (!chart) {
         showError('Chart not found');
@@ -2237,6 +2349,12 @@ function handleLogout() {
     state.user = null;
     localStorage.removeItem('auth_token');
     
+    // Close user menu dropdown
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu) {
+        userMenu.classList.remove('active');
+    }
+    
     // Clear any status messages in modals
     clearStatus('loginStatus');
     clearStatus('registerStatus');
@@ -2250,6 +2368,39 @@ function handleLogout() {
     updateAuthUI();
 }
 
+// Toggle mobile menu
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (mobileMenu && mobileMenuToggle) {
+        mobileMenu.classList.toggle('active');
+        mobileMenuToggle.classList.toggle('active');
+        
+        // Prevent body scroll when menu is open
+        if (mobileMenu.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (mobileMenu && mobileMenuToggle && mobileMenu.classList.contains('active')) {
+        if (!mobileMenu.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+            toggleMobileMenu();
+        }
+    }
+});
+
+// Make toggleMobileMenu available globally
+window.toggleMobileMenu = toggleMobileMenu;
+
 function updateAuthUI() {
     const authButtons = document.getElementById('authButtons');
     const userMenu = document.getElementById('userMenu');
@@ -2257,22 +2408,40 @@ function updateAuthUI() {
     const uploadBtn = document.getElementById('uploadBtn');
     const myChartsLink = document.getElementById('myChartsLink');
     const adminLink = document.getElementById('adminLink');
+    
+    // Mobile elements
+    const mobileAuthButtons = document.getElementById('mobileAuthButtons');
+    const mobileUserMenu = document.getElementById('mobileUserMenu');
+    const mobileUsernameDisplay = document.getElementById('mobileUsernameDisplay');
+    const mobileMyChartsLink = document.getElementById('mobileMyChartsLink');
+    const mobileAdminLink = document.getElementById('mobileAdminLink');
 
     if (state.token && state.user) {
-        // User is logged in
+        // User is logged in - Desktop
         if (authButtons) authButtons.style.display = 'none';
         if (userMenu) userMenu.style.display = 'flex';
         if (usernameDisplay) usernameDisplay.textContent = state.user.username;
-        if (uploadBtn) uploadBtn.style.display = 'flex';
         if (myChartsLink) myChartsLink.style.display = 'block';
-        // Show admin link only if user is admin
         if (adminLink) adminLink.style.display = state.user.is_admin ? 'block' : 'none';
+        
+        // Mobile
+        if (mobileAuthButtons) mobileAuthButtons.style.display = 'none';
+        if (mobileUserMenu) mobileUserMenu.style.display = 'flex';
+        if (mobileUsernameDisplay) mobileUsernameDisplay.textContent = state.user.username;
+        if (mobileMyChartsLink) mobileMyChartsLink.style.display = 'block';
+        if (mobileAdminLink) mobileAdminLink.style.display = state.user.is_admin ? 'block' : 'none';
     } else {
-        // User is not logged in
+        // User is not logged in - Desktop
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
-        if (uploadBtn) uploadBtn.style.display = 'none';
         if (myChartsLink) myChartsLink.style.display = 'none';
+        if (adminLink) adminLink.style.display = 'none';
+        
+        // Mobile
+        if (mobileAuthButtons) mobileAuthButtons.style.display = 'flex';
+        if (mobileUserMenu) mobileUserMenu.style.display = 'none';
+        if (mobileMyChartsLink) mobileMyChartsLink.style.display = 'none';
+        if (mobileAdminLink) mobileAdminLink.style.display = 'none';
     }
 }
 
