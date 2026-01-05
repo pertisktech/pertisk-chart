@@ -50,6 +50,13 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Download Go modules on host
+        run: |
+          # Download modules on native host to avoid QEMU emulation issues
+          # This prevents SIGSEGV during go mod download in emulated environments
+          go mod download
+          go mod verify
+
       - name: Build binaries with static linking
         run: |
           # Use Debian-based image with glibc for SQLite3 compatibility
@@ -58,6 +65,12 @@ jobs:
           # For CGO cross-compilation, we build on the target platform to use native compiler
           PLATFORM="linux/${{ matrix.goarch }}"
           BINARY_NAME="${{ env.BINARY_NAME }}"
+          
+          # Get Go module cache path from host
+          GOMODCACHE=$(go env GOMODCACHE)
+          if [ -z "$GOMODCACHE" ]; then
+            GOMODCACHE="$HOME/go/pkg/mod"
+          fi
           
           # Create a Dockerfile for better caching
           # Build on target platform to get native compiler (slower but more reliable for CGO)
@@ -69,10 +82,15 @@ jobs:
               rm -rf /var/lib/apt/lists/*
           WORKDIR /app
           
-          # Cache Go modules
+          # Copy go.mod and go.sum first
           COPY go.mod go.sum ./
-          RUN --mount=type=cache,target=/go/pkg/mod \
-              go mod download
+          
+          # Copy pre-downloaded modules from host to avoid QEMU network issues
+          # This prevents SIGSEGV during go mod download in emulated environments
+          COPY go-modules/ /go/pkg/mod/
+          
+          # Verify modules are available
+          RUN go mod verify || echo "Warning: Module verification failed"
           
           # Copy source
           COPY . .
@@ -81,7 +99,6 @@ jobs:
           ARG BINARY_NAME
           RUN mkdir -p /out
           RUN --mount=type=cache,target=/root/.cache/go-build \
-              --mount=type=cache,target=/go/pkg/mod \
               CGO_ENABLED=1 \
               go build -a -buildvcs=false -ldflags='-s -w' -tags 'osusergo netgo' \
               -o /out/\${BINARY_NAME}-linux-\$(go env GOARCH) ./cmd/server && \
@@ -92,6 +109,15 @@ jobs:
           FROM scratch AS export
           COPY --from=base /out /
           DOCKERFILE
+          
+          # Copy Go modules from host to build context
+          # This avoids running go mod download inside QEMU emulation
+          echo "Preparing Go modules from $GOMODCACHE"
+          mkdir -p go-modules
+          if [ -d "$GOMODCACHE" ] && [ "$(ls -A $GOMODCACHE 2>/dev/null)" ]; then
+            # Copy modules, preserving structure
+            rsync -a --quiet "$GOMODCACHE/" go-modules/ || cp -r "$GOMODCACHE"/* go-modules/ 2>/dev/null || true
+          fi
           
           # Build with GitHub Actions cache
           # Using target platform ensures native compiler is available
@@ -107,8 +133,8 @@ jobs:
           # Verify binaries were created
           ls -lh $BINARY_NAME-linux-${{ matrix.goarch }} pertisk-chart-create-admin-linux-${{ matrix.goarch }}
           
-          # Cleanup temporary Dockerfile
-          rm -f Dockerfile.build
+          # Cleanup temporary files
+          rm -rf Dockerfile.build go-modules
 
       - name: Install packaging tools
         run: |
