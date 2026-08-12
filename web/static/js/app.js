@@ -129,12 +129,8 @@ function setupEventListeners() {
         themeToggle.addEventListener('click', toggleTheme);
     }
 
-    // Mobile menu toggle
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const mobileMenu = document.getElementById('mobileMenu');
-    if (mobileMenuToggle && mobileMenu) {
-        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
-    }
+    // Sidebar shell controls
+    setupSidebarShell();
 
     // User menu dropdown
     const userMenuTrigger = document.getElementById('userMenuTrigger');
@@ -142,91 +138,44 @@ function setupEventListeners() {
     if (userMenuTrigger && userMenu) {
         userMenuTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            userMenu.classList.toggle('active');
+            const open = userMenu.classList.toggle('active');
+            userMenuTrigger.classList.toggle('open', open);
+            userMenuTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
         
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (userMenu && !userMenu.contains(e.target)) {
                 userMenu.classList.remove('active');
+                userMenuTrigger.classList.remove('open');
+                userMenuTrigger.setAttribute('aria-expanded', 'false');
             }
         });
     }
 
-    // Main search input - sync with mobile and handle search
+    // Main search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        // Close any open menus when clicking on search
         searchInput.addEventListener('focus', () => {
-            // Close user menu dropdown if open
-            const userMenu = document.getElementById('userMenu');
-            if (userMenu && userMenu.classList.contains('active')) {
-                userMenu.classList.remove('active');
+            const userMenuEl = document.getElementById('userMenu');
+            const trigger = document.getElementById('userMenuTrigger');
+            if (userMenuEl && userMenuEl.classList.contains('active')) {
+                userMenuEl.classList.remove('active');
+                if (trigger) {
+                    trigger.classList.remove('open');
+                    trigger.setAttribute('aria-expanded', 'false');
+                }
             }
-            // Close mobile menu if open
-            const mobileMenu = document.getElementById('mobileMenu');
-            if (mobileMenu && mobileMenu.classList.contains('active')) {
-                toggleMobileMenu();
-            }
+            closeSidebar();
         });
         
-        // Handle search
         searchInput.addEventListener('input', handleSearch);
-        
-        // Sync with mobile search
-        searchInput.addEventListener('input', (e) => {
-            const mobileSearch = document.getElementById('mobileSearchInput');
-            if (mobileSearch) {
-                mobileSearch.value = e.target.value;
-            }
-        });
-    }
-    
-    // Mobile search input - sync with main and close menus on focus
-    const mobileSearchInput = document.getElementById('mobileSearchInput');
-    if (mobileSearchInput) {
-        // Close menus when focusing on mobile search
-        mobileSearchInput.addEventListener('focus', () => {
-            // Close user menu dropdown if open
-            const userMenu = document.getElementById('userMenu');
-            if (userMenu && userMenu.classList.contains('active')) {
-                userMenu.classList.remove('active');
-            }
-        });
-        
-        // Handle search and sync with main search
-        mobileSearchInput.addEventListener('input', (e) => {
-            handleSearch(e);
-            // Sync with main search
-            const mainSearch = document.getElementById('searchInput');
-            if (mainSearch) {
-                mainSearch.value = e.target.value;
-            }
-        });
     }
 
-    // Mobile auth buttons
-    const mobileLoginBtn = document.getElementById('mobileLoginBtn');
-    const mobileRegisterBtn = document.getElementById('mobileRegisterBtn');
-    if (mobileLoginBtn) {
-        mobileLoginBtn.addEventListener('click', () => {
-            toggleMobileMenu();
-            showModal('loginModal');
-        });
-    }
-    if (mobileRegisterBtn) {
-        mobileRegisterBtn.addEventListener('click', () => {
-            toggleMobileMenu();
-            showModal('registerModal');
-        });
-    }
-
-    // Mobile upload and logout
-    const mobileUploadBtn = document.getElementById('mobileUploadBtn');
-    const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
-    if (mobileUploadBtn) {
-        mobileUploadBtn.addEventListener('click', () => {
-            toggleMobileMenu();
+    // Upload button
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', () => {
             if (!state.token) {
                 showModal('loginModal');
                 return;
@@ -234,17 +183,10 @@ function setupEventListeners() {
             showModal('uploadModal');
         });
     }
-    if (mobileLogoutBtn) {
-        mobileLogoutBtn.addEventListener('click', () => {
-            toggleMobileMenu();
-            handleLogout();
-        });
-    }
 
-    // Upload button (desktop)
-    const uploadBtn = document.getElementById('uploadBtn');
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', () => {
+    const heroUploadBtn = document.getElementById('heroUploadBtn');
+    if (heroUploadBtn) {
+        heroUploadBtn.addEventListener('click', () => {
             if (!state.token) {
                 showModal('loginModal');
                 return;
@@ -414,11 +356,8 @@ function createChartCard(chart) {
 
 // Show chart detail view
 async function showChartDetail(chartName, shouldUpdateURL = true) {
-    // Close mobile menu if open
-    const mobileMenu = document.getElementById('mobileMenu');
-    if (mobileMenu && mobileMenu.classList.contains('active')) {
-        toggleMobileMenu();
-    }
+    // Close mobile sidebar if open
+    closeSidebar();
     
     const chart = state.charts.find(c => c.name === chartName);
     if (!chart) {
@@ -445,6 +384,7 @@ async function showChartDetail(chartName, shouldUpdateURL = true) {
 
     state.currentChart = chart;
     state.currentView = 'chartDetail';
+    updateShellChrome('chartDetail', { chartName });
     
     // Update URL if needed
     if (shouldUpdateURL) {
@@ -545,6 +485,7 @@ function renderChartDetailContent(chart) {
     // Ensure the view is visible
     detailView.style.display = 'block';
     detailView.style.visibility = 'visible';
+    updateShellChrome('chartDetail', { chartName: chart.name });
     
     console.log('Rendering chart detail content for:', chart.name);
 
@@ -1827,6 +1768,10 @@ async function loadNotes(chartName, version) {
 // Handle search
 function handleSearch(e) {
     state.searchQuery = e.target.value.toLowerCase();
+    if (state.currentView !== 'charts' && state.searchQuery) {
+        showView('charts');
+        return;
+    }
     applyFilters();
 }
 
@@ -2058,6 +2003,17 @@ function handleRoute(route, updateHistory = true) {
 
 function showViewInternal(viewName, params = {}) {
     state.currentView = viewName;
+    updateShellChrome(viewName, params);
+    closeSidebar();
+
+    const appContent = document.getElementById('appContent');
+    const appShell = document.getElementById('app');
+    if (appContent) {
+        appContent.classList.remove('home-active');
+    }
+    if (appShell) {
+        appShell.classList.remove('home-mode');
+    }
 
     // Hide all views - use both ID and class selectors to ensure all are hidden
     const homeView = document.getElementById('homeView');
@@ -2092,7 +2048,7 @@ function showViewInternal(viewName, params = {}) {
     switch (viewName) {
         case 'home':
             if (homeView) {
-                homeView.style.display = 'block';
+                homeView.style.display = 'flex';
                 homeView.style.visibility = 'visible';
             }
             break;
@@ -2159,7 +2115,7 @@ function showViewInternal(viewName, params = {}) {
             break;
         default:
             if (homeView) {
-                homeView.style.display = 'block';
+                homeView.style.display = 'flex';
                 homeView.style.visibility = 'visible';
             }
     }
@@ -2201,7 +2157,7 @@ function hideModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'none';
-        document.body.style.overflow = '';
+        document.body.style.overflow = 'hidden';
         
         // Clear status messages when closing modals
         if (modalId === 'loginModal') {
@@ -2351,8 +2307,13 @@ function handleLogout() {
     
     // Close user menu dropdown
     const userMenu = document.getElementById('userMenu');
+    const userMenuTrigger = document.getElementById('userMenuTrigger');
     if (userMenu) {
         userMenu.classList.remove('active');
+    }
+    if (userMenuTrigger) {
+        userMenuTrigger.classList.remove('open');
+        userMenuTrigger.setAttribute('aria-expanded', 'false');
     }
     
     // Clear any status messages in modals
@@ -2368,80 +2329,157 @@ function handleLogout() {
     updateAuthUI();
 }
 
-// Toggle mobile menu
-function toggleMobileMenu() {
-    const mobileMenu = document.getElementById('mobileMenu');
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    
-    if (mobileMenu && mobileMenuToggle) {
-        mobileMenu.classList.toggle('active');
-        mobileMenuToggle.classList.toggle('active');
-        
-        // Prevent body scroll when menu is open
-        if (mobileMenu.classList.contains('active')) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
+const SIDEBAR_COLLAPSED_KEY = 'pertisk_chart_sidebar_collapsed';
+const VIEW_TITLES = {
+    home: 'Home',
+    charts: 'Browse',
+    myCharts: 'My Charts',
+    admin: 'Admin',
+    chartDetail: 'Chart Detail'
+};
+
+function setupSidebarShell() {
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const menuBtn = document.getElementById('topbarMenuBtn');
+    const collapseBtn = document.getElementById('sidebarCollapseBtn');
+
+    if (sidebar && localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true') {
+        sidebar.classList.add('collapsed');
+        if (collapseBtn) {
+            collapseBtn.title = 'Expand sidebar';
+            collapseBtn.setAttribute('aria-label', 'Expand sidebar');
         }
+    }
+
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => toggleSidebar());
+    }
+    if (backdrop) {
+        backdrop.addEventListener('click', () => closeSidebar());
+    }
+    if (collapseBtn && sidebar) {
+        collapseBtn.addEventListener('click', () => {
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+            collapseBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+            collapseBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSidebar();
+    });
+}
+
+function isSidebarOpen() {
+    const sidebar = document.getElementById('appSidebar');
+    return !!(sidebar && sidebar.classList.contains('open'));
+}
+
+function toggleSidebar() {
+    if (isSidebarOpen()) closeSidebar();
+    else openSidebar();
+}
+
+function openSidebar() {
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const main = document.getElementById('appMain');
+    const menuBtn = document.getElementById('topbarMenuBtn');
+    if (!sidebar) return;
+
+    sidebar.classList.add('open');
+    if (backdrop) {
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden', 'false');
+    }
+    if (main) main.classList.add('sidebar-open');
+    if (menuBtn) {
+        menuBtn.setAttribute('aria-expanded', 'true');
+        menuBtn.setAttribute('aria-label', 'Close menu');
+        const menuIcon = menuBtn.querySelector('.icon-menu');
+        const closeIcon = menuBtn.querySelector('.icon-close');
+        if (menuIcon) menuIcon.style.display = 'none';
+        if (closeIcon) closeIcon.style.display = 'block';
     }
 }
 
-// Close mobile menu when clicking outside
-document.addEventListener('click', (e) => {
-    const mobileMenu = document.getElementById('mobileMenu');
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    
-    if (mobileMenu && mobileMenuToggle && mobileMenu.classList.contains('active')) {
-        if (!mobileMenu.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
-            toggleMobileMenu();
-        }
-    }
-});
+function closeSidebar() {
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const main = document.getElementById('appMain');
+    const menuBtn = document.getElementById('topbarMenuBtn');
+    if (!sidebar) return;
 
-// Make toggleMobileMenu available globally
+    sidebar.classList.remove('open');
+    if (backdrop) {
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+    }
+    if (main) main.classList.remove('sidebar-open');
+    if (menuBtn) {
+        menuBtn.setAttribute('aria-expanded', 'false');
+        menuBtn.setAttribute('aria-label', 'Open menu');
+        const menuIcon = menuBtn.querySelector('.icon-menu');
+        const closeIcon = menuBtn.querySelector('.icon-close');
+        if (menuIcon) menuIcon.style.display = 'block';
+        if (closeIcon) closeIcon.style.display = 'none';
+    }
+}
+
+function updateShellChrome(viewName, params = {}) {
+    const titleEl = document.getElementById('topbarTitle');
+    let title = VIEW_TITLES[viewName] || 'Pertisk Chart';
+    if (viewName === 'chartDetail' && params.chartName) {
+        title = params.chartName;
+    } else if (viewName === 'chartDetail' && state.currentChart) {
+        title = state.currentChart.name;
+    }
+    if (titleEl) titleEl.textContent = title;
+
+    const activeNav = viewName === 'chartDetail' ? 'charts' : viewName;
+    document.querySelectorAll('.nav-link[data-nav]').forEach((link) => {
+        const isActive = link.getAttribute('data-nav') === activeNav;
+        link.classList.toggle('active', isActive);
+        if (isActive) {
+            link.setAttribute('aria-current', 'page');
+        } else {
+            link.removeAttribute('aria-current');
+        }
+    });
+}
+
+// Legacy alias for any remaining callers
+function toggleMobileMenu() {
+    toggleSidebar();
+}
+
 window.toggleMobileMenu = toggleMobileMenu;
+window.closeSidebar = closeSidebar;
 
 function updateAuthUI() {
     const authButtons = document.getElementById('authButtons');
     const userMenu = document.getElementById('userMenu');
     const usernameDisplay = document.getElementById('usernameDisplay');
-    const uploadBtn = document.getElementById('uploadBtn');
+    const userAvatarInitial = document.getElementById('userAvatarInitial');
     const myChartsLink = document.getElementById('myChartsLink');
     const adminLink = document.getElementById('adminLink');
-    
-    // Mobile elements
-    const mobileAuthButtons = document.getElementById('mobileAuthButtons');
-    const mobileUserMenu = document.getElementById('mobileUserMenu');
-    const mobileUsernameDisplay = document.getElementById('mobileUsernameDisplay');
-    const mobileMyChartsLink = document.getElementById('mobileMyChartsLink');
-    const mobileAdminLink = document.getElementById('mobileAdminLink');
 
     if (state.token && state.user) {
-        // User is logged in - Desktop
         if (authButtons) authButtons.style.display = 'none';
         if (userMenu) userMenu.style.display = 'flex';
         if (usernameDisplay) usernameDisplay.textContent = state.user.username;
-        if (myChartsLink) myChartsLink.style.display = 'block';
-        if (adminLink) adminLink.style.display = state.user.is_admin ? 'block' : 'none';
-        
-        // Mobile
-        if (mobileAuthButtons) mobileAuthButtons.style.display = 'none';
-        if (mobileUserMenu) mobileUserMenu.style.display = 'flex';
-        if (mobileUsernameDisplay) mobileUsernameDisplay.textContent = state.user.username;
-        if (mobileMyChartsLink) mobileMyChartsLink.style.display = 'block';
-        if (mobileAdminLink) mobileAdminLink.style.display = state.user.is_admin ? 'block' : 'none';
+        if (userAvatarInitial) {
+            userAvatarInitial.textContent = (state.user.username || 'U').charAt(0).toUpperCase();
+        }
+        if (myChartsLink) myChartsLink.style.display = 'flex';
+        if (adminLink) adminLink.style.display = state.user.is_admin ? 'flex' : 'none';
     } else {
-        // User is not logged in - Desktop
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
         if (myChartsLink) myChartsLink.style.display = 'none';
         if (adminLink) adminLink.style.display = 'none';
-        
-        // Mobile
-        if (mobileAuthButtons) mobileAuthButtons.style.display = 'flex';
-        if (mobileUserMenu) mobileUserMenu.style.display = 'none';
-        if (mobileMyChartsLink) mobileMyChartsLink.style.display = 'none';
-        if (mobileAdminLink) mobileAdminLink.style.display = 'none';
     }
 }
 

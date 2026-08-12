@@ -4,64 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pertisk Chart Repository - Helm Charts</title>
+    <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="64x64" href="/static/images/favicon-64.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
-    <link rel="stylesheet" href="/static/css/app.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Navigation Header -->
-        <nav class="navbar">
-            <div class="nav-container">
-                <a href="/" class="nav-brand" onclick="event.preventDefault(); showView('home'); return false;">
-                    <div class="brand-wrapper">
-                        <img src="/static/images/logo.png" alt="Pertisk Charts" class="logo-icon">
-                        <span class="brand-text">Pertisk Charts</span>
+    <div id="app" class="shell">
+        <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+        <aside class="sidebar" id="appSidebar">
+            <div class="sidebar-header">
+                <a href="/" class="brand" onclick="event.preventDefault(); showView('home'); return false;">
+                    <img src="/static/images/favicon.svg" alt="" class="brand-mark">
+                    <div class="brand-text">
+                        <span>Pertisk <span class="accent">Chart</span></span>
                     </div>
                 </a>
-                
-                <div class="nav-links">
-                    <a href="/charts" onclick="event.preventDefault(); showView('charts'); return false;" class="nav-link-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-link-icon">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
+                <button type="button" class="sidebar-collapse-btn anchor-right" id="sidebarCollapseBtn" title="Collapse sidebar" aria-label="Collapse sidebar">
+                    <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="11 17 6 12 11 7"></polyline>
+                        <polyline points="18 17 13 12 18 7"></polyline>
+                    </svg>
+                    <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display: none;">
+                        <polyline points="13 17 18 12 13 7"></polyline>
+                        <polyline points="6 17 11 12 6 7"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav" aria-label="Primary">
+                <a href="/" class="nav-link" data-nav="home" onclick="event.preventDefault(); showView('home'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                        <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"></path>
+                    </svg>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="/charts" class="nav-link" data-nav="charts" onclick="event.preventDefault(); showView('charts'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span class="nav-label">Browse</span>
+                </a>
+                <a href="/my-charts" class="nav-link" data-nav="myCharts" id="myChartsLink" style="display: none;" onclick="event.preventDefault(); showView('myCharts'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span class="nav-label">My Charts</span>
+                </a>
+                <a href="/admin" class="nav-link" data-nav="admin" id="adminLink" style="display: none;" onclick="event.preventDefault(); showView('admin'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.998 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span class="nav-label">Admin</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="main" id="appMain">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button type="button" class="btn-icon secondary topbar-menu-btn" id="topbarMenuBtn" aria-controls="appSidebar" aria-expanded="false" aria-label="Open menu">
+                        <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
                         </svg>
-                        <span>Browse</span>
-                    </a>
-                    <a href="/my-charts" id="myChartsLink" onclick="event.preventDefault(); showView('myCharts'); return false;" class="nav-link-item" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-link-icon">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
+                        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display: none;">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
-                        <span>My Charts</span>
-                    </a>
-                    <a href="/admin" id="adminLink" onclick="event.preventDefault(); showView('admin'); return false;" class="nav-link-item" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-link-icon">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                        </svg>
-                        <span>Admin</span>
-                    </a>
+                    </button>
+                    <h1 class="topbar-title" id="topbarTitle">Home</h1>
                 </div>
-                
-                <div class="nav-search">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                <div class="topbar-search">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>
                     <input type="text" id="searchInput" class="search-input" placeholder="Search charts...">
                 </div>
-                
-                <div class="nav-actions">
-                    <!-- Theme Toggle -->
-                    <button class="nav-action-btn theme-toggle" id="themeToggle" title="Toggle dark mode">
-                        <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+
+                <div class="row-actions">
+                    <button type="button" class="btn-icon secondary theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+                        <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;" aria-hidden="true">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
                             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -72,32 +105,27 @@
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
-                        <svg id="themeIconDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg id="themeIconDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
-                    
+
                     <div id="authButtons" class="auth-buttons">
-                        <button class="btn-nav-secondary" id="loginBtn">Login</button>
-                        <button class="btn-nav-primary" id="registerBtn">Register</button>
+                        <button type="button" class="btn-nav-secondary" id="loginBtn">Login</button>
+                        <button type="button" class="btn-nav-primary" id="registerBtn">Register</button>
                     </div>
-                    
+
                     <div id="userMenu" class="user-menu" style="display: none;">
-                        <div class="user-menu-trigger" id="userMenuTrigger">
-                            <div class="user-avatar">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </div>
+                        <button type="button" class="user-menu-trigger" id="userMenuTrigger" aria-haspopup="menu" aria-expanded="false">
+                            <span class="user-avatar" id="userAvatarInitial">U</span>
                             <span id="usernameDisplay" class="username-display"></span>
-                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
-                        </div>
-                        <div class="user-menu-dropdown" id="userMenuDropdown">
-                            <button class="user-menu-item" id="uploadBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        </button>
+                        <div class="user-menu-dropdown" id="userMenuDropdown" role="menu">
+                            <button type="button" class="user-menu-item" id="uploadBtn" role="menuitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="17 8 12 3 7 8"></polyline>
                                     <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -105,8 +133,8 @@
                                 <span>Upload Chart</span>
                             </button>
                             <div class="user-menu-divider"></div>
-                            <button class="user-menu-item" id="logoutBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <button type="button" class="user-menu-item" id="logoutBtn" role="menuitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                     <polyline points="16 17 21 12 16 7"></polyline>
                                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -116,182 +144,22 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Mobile Menu Toggle -->
-                <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                    <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Mobile Menu -->
-            <div class="mobile-menu" id="mobileMenu">
-                <div class="mobile-menu-content">
-                    <div class="mobile-nav-links">
-                        <a href="/charts" onclick="event.preventDefault(); showView('charts'); toggleMobileMenu(); return false;" class="mobile-nav-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.35-4.35"></path>
-                            </svg>
-                            <span>Browse Charts</span>
-                        </a>
-                        <a href="/my-charts" id="mobileMyChartsLink" onclick="event.preventDefault(); showView('myCharts'); toggleMobileMenu(); return false;" class="mobile-nav-link" style="display: none;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                <polyline points="7 3 7 8 15 8"></polyline>
-                            </svg>
-                            <span>My Charts</span>
-                        </a>
-                        <a href="/admin" id="mobileAdminLink" onclick="event.preventDefault(); showView('admin'); toggleMobileMenu(); return false;" class="mobile-nav-link" style="display: none;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                            <span>Admin</span>
-                        </a>
-                    </div>
-                    <div class="mobile-search">
-                        <input type="text" id="mobileSearchInput" class="search-input" placeholder="Search charts...">
-                    </div>
-                    <div class="mobile-auth" id="mobileAuthButtons">
-                        <button class="btn-nav-secondary btn-full" id="mobileLoginBtn">Login</button>
-                        <button class="btn-nav-primary btn-full" id="mobileRegisterBtn">Register</button>
-                    </div>
-                    <div class="mobile-user-menu" id="mobileUserMenu" style="display: none;">
-                        <div class="mobile-user-info">
-                            <div class="user-avatar">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </div>
-                            <span id="mobileUsernameDisplay" class="username-display"></span>
-                        </div>
-                        <button class="mobile-user-action" id="mobileUploadBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            <span>Upload Chart</span>
-                        </button>
-                        <button class="mobile-user-action" id="mobileLogoutBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                            </svg>
-                            <span>Logout</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </nav>
+            </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="content-container">
-                <!-- Hero Section -->
+            <div class="content" id="appContent">
+                <div class="content-container">
+                <!-- Home -->
                 <section class="hero-section" id="homeView">
-                    <div class="hero-background">
-                        <div class="hero-gradient"></div>
-                    </div>
-                    <div class="hero-content">
-                        <div class="hero-badge">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                            </svg>
-                            <span>Helm Chart Repository</span>
-                        </div>
-                        <h1 class="hero-title">
-                            Discover and Deploy
-                            <span class="hero-title-highlight">Helm Charts</span>
-                        </h1>
-                        <p class="hero-subtitle">Find, install, and manage Kubernetes applications with ease. Your central hub for Helm chart distribution.</p>
+                    <div class="hero-stage">
+                        <h1 class="hero-brand">Pertisk <span class="accent">Chart</span></h1>
+                        <p class="hero-subtitle">Helm chart repository for discover, install, and distribute.</p>
                         <div class="hero-actions">
-                            <button class="btn-hero-primary" onclick="showView('charts')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 8px;">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="m21 21-4.35-4.35"></path>
-                                </svg>
-                                Browse Charts
-                            </button>
-                            <button class="btn-hero-secondary" onclick="showView('charts')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 8px;">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                Upload Chart
-                            </button>
+                            <button type="button" class="btn-hero-primary" onclick="showView('charts')">Browse Charts</button>
+                            <button type="button" class="btn-hero-secondary" id="heroUploadBtn">Upload Chart</button>
                         </div>
-                        <div class="hero-stats">
-                            <div class="hero-stat-card">
-                                <div class="hero-stat-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                                    </svg>
-                                </div>
-                                <div class="hero-stat-content">
-                                    <span class="hero-stat-number" id="totalCharts">0</span>
-                                    <span class="hero-stat-label">Available Charts</span>
-                                </div>
-                            </div>
-                            <div class="hero-stat-card">
-                                <div class="hero-stat-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                                    </svg>
-                                </div>
-                                <div class="hero-stat-content">
-                                    <span class="hero-stat-number" id="totalVersions">0</span>
-                                    <span class="hero-stat-label">Chart Versions</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Features Section -->
-                    <div class="hero-features">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                                </svg>
-                            </div>
-                            <h3 class="feature-title">Easy Management</h3>
-                            <p class="feature-description">Upload, browse, and manage your Helm charts with an intuitive interface</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="m21 21-4.35-4.35"></path>
-                                </svg>
-                            </div>
-                            <h3 class="feature-title">Quick Discovery</h3>
-                            <p class="feature-description">Search and discover charts through powerful search and filtering</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                </svg>
-                            </div>
-                            <h3 class="feature-title">Full API Access</h3>
-                            <p class="feature-description">Complete REST API for programmatic chart management and integration</p>
-                        </div>
+                        <p class="hero-meta">
+                            <span id="totalCharts">0</span> charts · <span id="totalVersions">0</span> versions
+                        </p>
                     </div>
                 </section>
 
@@ -553,8 +421,9 @@
                         </div>
                     </div>
                 </section>
+                </div>
             </div>
-        </main>
+        </div>
 
         <!-- Login Modal -->
         <div id="loginModal" class="modal" style="display: none;">
@@ -644,7 +513,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js"></script>
     <!-- Marked.js for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/static/js/app.js?v=2.0"></script>
+    <script src="/static/js/app.js?v=3.3"></script>
 </body>
 </html>
-
