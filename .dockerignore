@@ -1,0 +1,13 @@
+.git
+dist
+build
+tmp
+data
+chartstorage
+vendor
+pertisk-chart
+*.rpm
+.idea
+.vscode
+.DS_Store
+*.swp

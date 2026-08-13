@@ -170,6 +170,74 @@ Air will automatically rebuild and restart the server when you modify any `.go` 
 go build -ldflags="-s -w" -o pertisk-chart ./cmd/server
 ```
 
+## AlmaLinux RPM
+
+Build an installable RPM for AlmaLinux 9 (el9) using Docker:
+
+```bash
+make rpm
+```
+
+Optional overrides:
+
+```bash
+make rpm VERSION=0.1.2 RELEASE=1 ALMA_VERSION=9
+# AlmaLinux 8 or 10:
+make rpm ALMA_VERSION=8
+make rpm ALMA_VERSION=10
+```
+
+On an AlmaLinux/RHEL host with Go 1.21+ and `rpm-build` installed, you can build without Docker:
+
+```bash
+sudo dnf install -y rpm-build rpmdevtools gcc make git tar gzip rsync systemd-rpm-macros
+make rpm-native
+```
+
+Packages are written to `dist/`:
+
+- `pertisk-chart-<version>-1.el9.x86_64.rpm` — binary package
+- `pertisk-chart-<version>-1.el9.src.rpm` — source package
+
+### Install on AlmaLinux
+
+```bash
+sudo dnf install -y dist/pertisk-chart-*.el9.x86_64.rpm
+# or
+sudo rpm -Uvh dist/pertisk-chart-*.el9.x86_64.rpm
+```
+
+From this repo on an AlmaLinux host after `make rpm` or `make rpm-native`:
+
+```bash
+make rpm-install
+```
+
+Create an admin user, then start the service:
+
+```bash
+sudo pertisk-chart-create-admin \
+  -username admin \
+  -email admin@example.com \
+  -password your-secure-password \
+  -data-dir /var/lib/pertisk-chart \
+  -db-type sqlite
+
+sudo systemctl enable --now pertisk-chart
+sudo systemctl status pertisk-chart
+```
+
+The service listens on port 7080. Edit `/etc/pertisk-chart/config.conf` and run `sudo systemctl restart pertisk-chart` to apply changes.
+
+| Path | Purpose |
+| --- | --- |
+| `/usr/bin/pertisk-chart` | Server binary |
+| `/usr/bin/pertisk-chart-create-admin` | Admin bootstrap CLI |
+| `/etc/pertisk-chart/config.conf` | Service configuration |
+| `/var/lib/pertisk-chart` | Data and SQLite database |
+| `/var/lib/pertisk-chart/chartstorage` | Uploaded charts |
+| `/usr/share/pertisk-chart/web` | Web UI assets |
+
 ### Testing
 
 Create a test chart:

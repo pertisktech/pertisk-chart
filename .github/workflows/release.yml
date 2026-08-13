@@ -144,6 +144,7 @@ jobs:
       - name: Create package directories
         run: |
           mkdir -p pkg/usr/bin
+          mkdir -p pkg/usr/libexec
           mkdir -p pkg/etc/pertisk-chart
           mkdir -p pkg/var/lib/pertisk-chart
           mkdir -p pkg/var/log/pertisk-chart
@@ -153,160 +154,20 @@ jobs:
           cp ${{ env.BINARY_NAME }}-linux-${{ matrix.goarch }} pkg/usr/bin/${{ env.BINARY_NAME }}
           chmod +x pkg/usr/bin/${{ env.BINARY_NAME }}
           
-          # Copy create-admin binary
           cp pertisk-chart-create-admin-linux-${{ matrix.goarch }} pkg/usr/bin/pertisk-chart-create-admin
           chmod +x pkg/usr/bin/pertisk-chart-create-admin
           
-          # Copy web files
-          cp -r web pkg/usr/share/pertisk-chart/
-
-      - name: Create systemd service file
-        run: |
-          cat > pkg/lib/systemd/system/pertisk-chart.service << 'EOF'
-          [Unit]
-          Description=Pertisk Helm Chart Repository Server
-          After=network.target
+          cp packaging/pertisk-chart.sh pkg/usr/libexec/pertisk-chart
+          chmod +x pkg/usr/libexec/pertisk-chart
           
-          [Service]
-          Type=simple
-          User=pertisk-chart
-          Group=pertisk-chart
-          ExecStart=/usr/bin/pertisk-chart \
-            --port=7080 \
-            --data-dir=/var/lib/pertisk-chart \
-            --storage-local-rootdir=/var/lib/pertisk-chart/chartstorage
-          Restart=always
-          RestartSec=5
-          LimitNOFILE=65535
-          
-          # Allow binding to privileged ports if needed
-          AmbientCapabilities=CAP_NET_BIND_SERVICE
-          CapabilityBoundingSet=CAP_NET_BIND_SERVICE
-          
-          # Security hardening
-          ProtectSystem=strict
-          ProtectHome=true
-          ReadWritePaths=/var/lib/pertisk-chart /var/log/pertisk-chart
-          PrivateTmp=true
-          
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-
-      - name: Create config file
-        run: |
-          cat > pkg/etc/pertisk-chart/config.conf << 'EOF'
-          # Pertisk Chart Repository Configuration
-          # See documentation for all available options
-          
-          # Server port
-          PORT=7080
-          
-          # Data directory
-          DATA_DIR=/var/lib/pertisk-chart
-          
-          # Storage root directory
-          STORAGE_ROOT=/var/lib/pertisk-chart/chartstorage
-          
-          # Database type (sqlite, postgres, file)
-          DB_TYPE=sqlite
-          
-          # Database DSN (for SQLite: file path, for PostgreSQL: connection string)
-          # DB_DSN=/var/lib/pertisk-chart/users.db
-          EOF
-
-      - name: Create pre/post install scripts
-        run: |
-          # Pre-install script
-          cat > preinstall.sh << 'EOF'
-          #!/bin/sh
-          set -e
-          
-          # Create pertisk-chart user and group if they don't exist
-          if ! getent group pertisk-chart >/dev/null 2>&1; then
-              groupadd --system pertisk-chart
-          fi
-          
-          if ! getent passwd pertisk-chart >/dev/null 2>&1; then
-              useradd --system --gid pertisk-chart --home-dir /var/lib/pertisk-chart \
-                  --shell /usr/sbin/nologin --comment "Pertisk Helm Chart Repository" pertisk-chart
-          fi
-          EOF
-          
-          # Post-install script
-          cat > postinstall.sh << 'EOF'
-          #!/bin/sh
-          set -e
-          
-          # Set proper permissions
-          chown -R pertisk-chart:pertisk-chart /var/lib/pertisk-chart
-          chown -R pertisk-chart:pertisk-chart /var/log/pertisk-chart
-          chmod 750 /var/lib/pertisk-chart
-          chmod 750 /var/log/pertisk-chart
-          
-          # Create chartstorage directory if it doesn't exist
-          mkdir -p /var/lib/pertisk-chart/chartstorage
-          chown pertisk-chart:pertisk-chart /var/lib/pertisk-chart/chartstorage
-          chmod 750 /var/lib/pertisk-chart/chartstorage
-          
-          # Set permissions on web directory (read-only for service user)
-          if [ -d /usr/share/pertisk-chart/web ]; then
-              chown -R root:root /usr/share/pertisk-chart/web
-              chmod -R 755 /usr/share/pertisk-chart/web
-          fi
-          
-          # Grant capability to bind to privileged ports if needed
-          if command -v setcap >/dev/null 2>&1; then
-              setcap 'cap_net_bind_service=+ep' /usr/bin/pertisk-chart
-              echo "Granted network binding capability to pertisk-chart binary"
-          else
-              echo "Warning: setcap not found. Install libcap2-bin (Debian/Ubuntu) or libcap (RHEL/CentOS)"
-              echo "Then run: sudo setcap 'cap_net_bind_service=+ep' /usr/bin/pertisk-chart"
-          fi
-          
-          # Reload systemd
-          if command -v systemctl >/dev/null 2>&1; then
-              systemctl daemon-reload
-              echo ""
-              echo "Pertisk Chart Repository has been installed successfully!"
-              echo ""
-              echo "IMPORTANT: Create an admin user before starting the service:"
-              echo "  sudo pertisk-chart-create-admin \\"
-              echo "    -username admin \\"
-              echo "    -email admin@example.com \\"
-              echo "    -password your-secure-password \\"
-              echo "    -data-dir /var/lib/pertisk-chart \\"
-              echo "    -db-type sqlite"
-              echo ""
-              echo "Then start the service:"
-              echo "  sudo systemctl start pertisk-chart"
-              echo ""
-              echo "To enable on boot:"
-              echo "  sudo systemctl enable pertisk-chart"
-              echo ""
-              echo "To check status:"
-              echo "  sudo systemctl status pertisk-chart"
-              echo ""
-          fi
-          EOF
-          
-          # Pre-remove script
-          cat > preremove.sh << 'EOF'
-          #!/bin/sh
-          set -e
-          
-          # Stop service if running
-          if command -v systemctl >/dev/null 2>&1; then
-              if systemctl is-active --quiet pertisk-chart; then
-                  systemctl stop pertisk-chart
-              fi
-              if systemctl is-enabled --quiet pertisk-chart 2>/dev/null; then
-                  systemctl disable pertisk-chart
-              fi
-          fi
-          EOF
-          
+          cp packaging/pertisk-chart.service pkg/lib/systemd/system/pertisk-chart.service
+          cp packaging/config.conf pkg/etc/pertisk-chart/config.conf
+          cp packaging/rpm/preinstall.sh preinstall.sh
+          cp packaging/rpm/postinstall.sh postinstall.sh
+          cp packaging/rpm/preremove.sh preremove.sh
           chmod +x preinstall.sh postinstall.sh preremove.sh
+          
+          cp -r web pkg/usr/share/pertisk-chart/
 
       - name: Build DEB package
         run: |
