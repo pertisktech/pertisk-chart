@@ -161,6 +161,31 @@
                             <span id="totalCharts">0</span> charts · <span id="totalVersions">0</span> versions
                         </p>
                     </div>
+
+                    <div class="home-charts-preview">
+                        <div class="section-header">
+                            <h2 class="section-title">Latest Charts</h2>
+                            <button type="button" class="btn-view-all" onclick="showView('charts')">
+                                View all charts
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="homeChartsGrid" class="charts-grid">
+                            <!-- Preview of charts will be rendered here -->
+                        </div>
+                        <div id="homeEmptyState" class="empty-state" style="display: none;">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <h3>No charts yet</h3>
+                            <p>Upload your first chart to get started.</p>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Charts Grid -->

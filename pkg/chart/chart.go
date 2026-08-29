@@ -27,7 +27,7 @@ type Chart struct {
 	Keywords     []string          `yaml:"keywords"`
 	KubeVersion  string            `yaml:"kubeVersion"`
 	Type         string            `yaml:"type"`
-	Annotations  map[string]string  `yaml:"annotations"`
+	Annotations  map[string]string `yaml:"annotations"`
 	Dependencies []Dependency      `yaml:"dependencies"`
 }
 
@@ -40,12 +40,12 @@ type Maintainer struct {
 
 // Dependency represents a chart dependency
 type Dependency struct {
-	Name       string `yaml:"name"`
-	Version    string `yaml:"version"`
-	Repository string `yaml:"repository"`
-	Condition  string `yaml:"condition"`
+	Name       string   `yaml:"name"`
+	Version    string   `yaml:"version"`
+	Repository string   `yaml:"repository"`
+	Condition  string   `yaml:"condition"`
 	Tags       []string `yaml:"tags"`
-	Enabled    bool   `yaml:"enabled"`
+	Enabled    bool     `yaml:"enabled"`
 }
 
 // ChartVersion represents a chart version entry in index.yaml
@@ -70,8 +70,8 @@ type ChartVersion struct {
 
 // Index represents the Helm repository index
 type Index struct {
-	APIVersion string                  `yaml:"apiVersion"`
-	Generated  string                  `yaml:"generated"`
+	APIVersion string                    `yaml:"apiVersion"`
+	Generated  string                    `yaml:"generated"`
 	Entries    map[string][]ChartVersion `yaml:"entries"`
 }
 
@@ -84,7 +84,7 @@ func ParseChartFromTarball(reader io.Reader) (*Chart, error) {
 	defer gzr.Close()
 
 	tr := tar.NewReader(gzr)
-	
+
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -114,13 +114,13 @@ func ParseChartName(filename string) (name, version string, err error) {
 	if !strings.HasSuffix(base, ".tgz") {
 		return "", "", fmt.Errorf("invalid chart filename: %s", filename)
 	}
-	
+
 	base = strings.TrimSuffix(base, ".tgz")
 	parts := strings.Split(base, "-")
 	if len(parts) < 2 {
 		return "", "", fmt.Errorf("invalid chart filename format: %s", filename)
 	}
-	
+
 	version = parts[len(parts)-1]
 	name = strings.Join(parts[:len(parts)-1], "-")
 	return name, version, nil
@@ -135,7 +135,7 @@ func ExtractValuesYAML(reader io.Reader) ([]byte, error) {
 	defer gzr.Close()
 
 	tr := tar.NewReader(gzr)
-	
+
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -168,7 +168,7 @@ func ExtractREADME(reader io.Reader) ([]byte, error) {
 	defer gzr.Close()
 
 	tr := tar.NewReader(gzr)
-	
+
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -202,7 +202,7 @@ func ExtractNOTES(reader io.Reader) ([]byte, error) {
 	defer gzr.Close()
 
 	tr := tar.NewReader(gzr)
-	
+
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -228,12 +228,12 @@ func ExtractNOTES(reader io.Reader) ([]byte, error) {
 
 // ResourceInfo represents a Kubernetes resource extracted from manifests
 type ResourceInfo struct {
-	Kind       string            `json:"kind"`
-	Name       string            `json:"name"`
-	Namespace  string            `json:"namespace,omitempty"`
-	APIVersion string            `json:"apiVersion"`
+	Kind       string                 `json:"kind"`
+	Name       string                 `json:"name"`
+	Namespace  string                 `json:"namespace,omitempty"`
+	APIVersion string                 `json:"apiVersion"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
-	Manifest   string            `json:"manifest,omitempty"`
+	Manifest   string                 `json:"manifest,omitempty"`
 }
 
 // ExtractManifests extracts all template files from a chart tarball
@@ -254,7 +254,7 @@ func ExtractManifests(reader io.Reader) ([]byte, error) {
 
 	tr := tar.NewReader(gzr)
 	var manifests []string
-	
+
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -271,7 +271,7 @@ func ExtractManifests(reader io.Reader) ([]byte, error) {
 			if ext != ".yaml" && ext != ".yml" && ext != ".tpl" {
 				continue
 			}
-			
+
 			// Skip NOTES.txt and helpers
 			baseName := filepath.Base(header.Name)
 			if baseName == "NOTES.txt" || baseName == "_helpers.tpl" {
@@ -283,7 +283,7 @@ func ExtractManifests(reader io.Reader) ([]byte, error) {
 			if err != nil {
 				continue // Skip files we can't read
 			}
-			
+
 			// Add separator and filename comment
 			manifest := fmt.Sprintf("---\n# Source: %s\n%s", header.Name, string(templateData))
 			manifests = append(manifests, manifest)
@@ -314,36 +314,45 @@ func ExtractResources(reader io.Reader) ([]ResourceInfo, error) {
 	}
 
 	var resources []ResourceInfo
-	
+
 	// Split manifests by --- separator
 	manifestParts := strings.Split(string(manifests), "---")
-	
+
 	for _, part := range manifestParts {
 		part = strings.TrimSpace(part)
-		if part == "" || strings.HasPrefix(part, "#") {
+		if part == "" {
 			continue
 		}
 
-		// Remove source comments
+		// Remove source comments, but remember the template filename for fallback naming
 		lines := strings.Split(part, "\n")
 		var yamlLines []string
+		var sourceFile string
 		for _, line := range lines {
 			trimmed := strings.TrimSpace(line)
-			if !strings.HasPrefix(trimmed, "# Source:") && trimmed != "" {
+			if strings.HasPrefix(trimmed, "# Source:") {
+				sourceFile = strings.TrimSpace(strings.TrimPrefix(trimmed, "# Source:"))
+				continue
+			}
+			if trimmed != "" {
 				yamlLines = append(yamlLines, line)
 			}
 		}
 		cleanPart := strings.Join(yamlLines, "\n")
-		
+
 		if cleanPart == "" {
 			continue
 		}
+
+		// Human-readable fallback when the name can't be resolved from template syntax
+		templateLabel := filepath.Base(sourceFile)
+		templateLabel = strings.TrimSuffix(templateLabel, filepath.Ext(templateLabel))
 
 		// Try to parse as YAML first (works for simple templates)
 		var resource map[string]interface{}
 		var kind, apiVersion, name, namespace string
 		var metadata map[string]interface{}
-		
+
 		if err := yaml.Unmarshal([]byte(cleanPart), &resource); err == nil {
 			// Successfully parsed as YAML
 			if k, ok := resource["kind"].(string); ok {
@@ -369,7 +378,7 @@ func ExtractResources(reader io.Reader) ([]ResourceInfo, error) {
 			namespace = extractField(cleanPart, "namespace")
 			metadata = nil // No metadata available from template syntax
 		}
-		
+
 		// If we found kind and name, create a resource entry
 		// Also create entry if we found kind (name might be in template syntax)
 		if kind != "" {
@@ -377,7 +386,7 @@ func ExtractResources(reader io.Reader) ([]ResourceInfo, error) {
 				// Try to extract name from metadata section
 				name = extractField(cleanPart, "name")
 				if name == "" {
-					name = "{{ template syntax }}"
+					name = fmt.Sprintf("<templated: %s>", templateLabel)
 				}
 			}
 			// If metadata wasn't set from YAML parsing, try to parse again
@@ -401,7 +410,7 @@ func ExtractResources(reader io.Reader) ([]ResourceInfo, error) {
 					}
 				}
 			}
-			
+
 			resources = append(resources, ResourceInfo{
 				Kind:       kind,
 				Name:       name,
@@ -419,13 +428,13 @@ func ExtractResources(reader io.Reader) ([]ResourceInfo, error) {
 			}
 			name = extractField(cleanPart, "name")
 			if name == "" {
-				name = "{{ template }}"
+				name = fmt.Sprintf("<templated: %s>", templateLabel)
 			}
 			apiVersion = extractField(cleanPart, "apiVersion")
 			if apiVersion == "" {
 				apiVersion = "v1"
 			}
-			
+
 			resources = append(resources, ResourceInfo{
 				Kind:       kind,
 				Name:       name,
@@ -472,10 +481,15 @@ func extractField(content, fieldName string) string {
 			if chartMatch := reChart.FindStringSubmatch(value); len(chartMatch) > 1 {
 				return chartMatch[1]
 			}
+			// Common helper pattern: {{ include "chart.fullname" . }} - surface the helper name
+			reInclude := regexp.MustCompile(`include\s+"([^"]+)"`)
+			if includeMatch := reInclude.FindStringSubmatch(value); len(includeMatch) > 1 {
+				parts := strings.Split(includeMatch[1], ".")
+				return parts[len(parts)-1]
+			}
 			return "" // Template syntax without extractable value
 		}
 		return value
 	}
 	return ""
 }
-

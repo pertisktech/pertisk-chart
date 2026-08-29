@@ -321,6 +321,49 @@ function renderCharts() {
     });
 }
 
+// Render a preview of the most recently updated charts on the home view
+const HOME_CHARTS_PREVIEW_LIMIT = 6;
+
+function renderHomeCharts() {
+    const grid = document.getElementById('homeChartsGrid');
+    const emptyState = document.getElementById('homeEmptyState');
+
+    if (!grid) return;
+
+    const charts = Array.isArray(state.charts) ? state.charts : [];
+
+    if (charts.length === 0) {
+        grid.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+    grid.style.display = 'grid';
+
+    const recentCharts = [...charts]
+        .sort((a, b) => {
+            const aDate = a.versions && a.versions.length > 0 ? new Date(a.versions[0].created) : 0;
+            const bDate = b.versions && b.versions.length > 0 ? new Date(b.versions[0].created) : 0;
+            return bDate - aDate;
+        })
+        .slice(0, HOME_CHARTS_PREVIEW_LIMIT);
+
+    grid.innerHTML = recentCharts.map(chart => createChartCard(chart)).join('');
+
+    grid.querySelectorAll('.chart-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.closest('.chart-actions')) {
+                return;
+            }
+            const chartName = card.dataset.chartName;
+            if (chartName) {
+                showChartDetail(chartName);
+            }
+        });
+    });
+}
+
 // Create chart card HTML
 function createChartCard(chart) {
     const latestVersion = chart.versions && chart.versions.length > 0 ? chart.versions[0] : null;
@@ -1921,6 +1964,8 @@ function updateStats() {
     
     if (chartsEl) chartsEl.textContent = totalCharts;
     if (versionsEl) versionsEl.textContent = totalVersions;
+
+    renderHomeCharts();
 }
 
 // URL Routing
