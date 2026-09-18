@@ -33,7 +33,7 @@ body {
   margin: 0;
   background: var(--surface);
   color: var(--copy);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Geist', 'Segoe UI', system-ui, sans-serif;
   overflow: hidden;
 }
 button, input { font: inherit; }
