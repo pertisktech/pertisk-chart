@@ -3,98 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pertisk Chart Repository - Helm Charts</title>
+    <title>Pertisk Chart — Helm chart repository</title>
+    <meta name="description" content="Discover, install, and distribute Helm charts across your infrastructure.">
     <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.min.css">
     <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/design.css?v=6">
 </head>
 <body>
-    <div id="app" class="shell">
-        <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+    <div id="app" class="shell app-shell dark">
+        <button type="button" class="sidebar-backdrop mobile-backdrop" id="sidebarBackdrop" aria-label="Close navigation" aria-hidden="true"></button>
 
         <aside class="sidebar" id="appSidebar">
-            <div class="sidebar-header">
+            <div class="brand-row">
                 <a href="/" class="brand" onclick="event.preventDefault(); showView('home'); return false;">
-                    <img src="/static/images/favicon.svg" alt="" class="brand-mark">
-                    <div class="brand-text">
-                        <span>Pertisk <span class="accent">Chart</span></span>
-                    </div>
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M7 14l4-4 3 3 5-6"></path>
+                        </svg>
+                    </span>
+                    <span class="brand-name">Pertisk <strong>Chart</strong></span>
                 </a>
-                <button type="button" class="sidebar-collapse-btn anchor-right" id="sidebarCollapseBtn" title="Collapse sidebar" aria-label="Collapse sidebar">
-                    <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polyline points="11 17 6 12 11 7"></polyline>
-                        <polyline points="18 17 13 12 18 7"></polyline>
+                <button type="button" class="icon-button collapse-button" id="sidebarCollapseBtn" title="Collapse sidebar" aria-label="Collapse sidebar">
+                    <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
-                    <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display: none;">
-                        <polyline points="13 17 18 12 13 7"></polyline>
-                        <polyline points="6 17 11 12 6 7"></polyline>
+                    <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true" style="display: none;">
+                        <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                 </button>
             </div>
 
-            <nav class="nav" aria-label="Primary">
-                <a href="/" class="nav-link" data-nav="home" onclick="event.preventDefault(); showView('home'); return false;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-                        <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"></path>
+            <div class="sidebar-section-label">Workspace</div>
+            <nav class="nav nav-list" aria-label="Primary navigation">
+                <a href="/" class="nav-link nav-item" data-nav="home" onclick="event.preventDefault(); showView('home'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="18" height="18" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
                     </svg>
-                    <span class="nav-label">Home</span>
+                    <span class="nav-label">Overview</span>
                 </a>
-                <a href="/charts" class="nav-link" data-nav="charts" onclick="event.preventDefault(); showView('charts'); return false;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                <a href="/charts" class="nav-link nav-item" data-nav="charts" onclick="event.preventDefault(); showView('charts'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="18" height="18" aria-hidden="true">
+                        <path d="M16.5 9.4 7.55 4.24"></path>
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.29 7 12 12 20.71 7"></polyline>
+                        <line x1="12" y1="22" x2="12" y2="12"></line>
                     </svg>
-                    <span class="nav-label">Browse</span>
+                    <span class="nav-label">Browse charts</span>
                 </a>
-                <a href="/my-charts" class="nav-link" data-nav="myCharts" id="myChartsLink" style="display: none;" onclick="event.preventDefault(); showView('myCharts'); return false;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <a href="/my-charts" class="nav-link nav-item" data-nav="myCharts" id="myChartsLink" style="display: none;" onclick="event.preventDefault(); showView('myCharts'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="18" height="18" aria-hidden="true">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                         <polyline points="7 3 7 8 15 8"></polyline>
                     </svg>
                     <span class="nav-label">My Charts</span>
                 </a>
-                <a href="/admin" class="nav-link" data-nav="admin" id="adminLink" style="display: none;" onclick="event.preventDefault(); showView('admin'); return false;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <a href="/admin" class="nav-link nav-item" data-nav="admin" id="adminLink" style="display: none;" onclick="event.preventDefault(); showView('admin'); return false;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="18" height="18" aria-hidden="true">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.998 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                     <span class="nav-label">Admin</span>
                 </a>
             </nav>
+
+            <div class="sidebar-bottom" id="sidebarBottom">
+                <button type="button" class="sidebar-card" id="sidebarPublishBtn" aria-label="Upload chart">
+                    <span class="mini-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                            <path d="M12 3v12"></path>
+                            <path d="m8 7 4-4 4 4"></path>
+                            <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path>
+                        </svg>
+                    </span>
+                    <div>
+                        <p>Publish your chart</p>
+                        <span>Share with your team</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+                <div class="profile-row" id="sidebarProfile">
+                    <div class="avatar" id="sidebarAvatar">PC</div>
+                    <div>
+                        <p id="sidebarProfileName">Guest</p>
+                        <span>Personal workspace</span>
+                    </div>
+                </div>
+            </div>
         </aside>
 
-        <div class="main" id="appMain">
+        <div class="main content-area" id="appMain">
             <header class="topbar">
-                <div class="topbar-left">
-                    <button type="button" class="btn-icon secondary topbar-menu-btn" id="topbarMenuBtn" aria-controls="appSidebar" aria-expanded="false" aria-label="Open menu">
-                        <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <line x1="3" y1="12" x2="21" y2="12"></line>
-                            <line x1="3" y1="18" x2="21" y2="18"></line>
-                        </svg>
-                        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display: none;">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                    <h1 class="topbar-title" id="topbarTitle">Home</h1>
-                </div>
-
-                <div class="topbar-search">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                <button type="button" class="icon-button mobile-menu" id="topbarMenuBtn" aria-controls="appSidebar" aria-expanded="false" aria-label="Open navigation">
+                    <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search charts...">
+                    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true" style="display: none;">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="breadcrumb">
+                    <span>Workspace</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                    <strong id="topbarTitle">Overview</strong>
                 </div>
 
-                <div class="row-actions">
-                    <button type="button" class="btn-icon secondary theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
-                        <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;" aria-hidden="true">
+                <div class="topbar-actions">
+                    <div class="search-box topbar-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" aria-label="Search charts" placeholder="Search charts">
+                        <kbd aria-hidden="true">⌘ K</kbd>
+                    </div>
+
+                    <button type="button" class="icon-button theme-button theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+                        <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17" style="display: none;" aria-hidden="true">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
                             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -105,7 +147,7 @@
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
-                        <svg id="themeIconDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <svg id="themeIconDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17" aria-hidden="true">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
@@ -116,16 +158,16 @@
                     </div>
 
                     <div id="userMenu" class="user-menu" style="display: none;">
-                        <button type="button" class="user-menu-trigger" id="userMenuTrigger" aria-haspopup="menu" aria-expanded="false">
+                        <button type="button" class="user-menu-trigger avatar top-avatar" id="userMenuTrigger" aria-haspopup="menu" aria-expanded="false">
                             <span class="user-avatar" id="userAvatarInitial">U</span>
                             <span id="usernameDisplay" class="username-display"></span>
-                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </button>
                         <div class="user-menu-dropdown" id="userMenuDropdown" role="menu">
                             <button type="button" class="user-menu-item" id="uploadBtn" role="menuitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="17 8 12 3 7 8"></polyline>
                                     <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -134,7 +176,7 @@
                             </button>
                             <div class="user-menu-divider"></div>
                             <button type="button" class="user-menu-item" id="logoutBtn" role="menuitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                     <polyline points="16 17 21 12 16 7"></polyline>
                                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -147,51 +189,125 @@
             </header>
 
             <div class="content" id="appContent">
-                <div class="content-container">
+                <div class="content-container page-content">
                 <!-- Home -->
                 <section class="hero-section" id="homeView">
                     <div class="hero-stage">
-                        <h1 class="hero-brand">Pertisk <span class="accent">Chart</span></h1>
-                        <p class="hero-subtitle">Helm chart repository for discover, install, and distribute.</p>
-                        <div class="hero-actions">
-                            <button type="button" class="btn-hero-primary" onclick="showView('charts')">Browse Charts</button>
-                            <button type="button" class="btn-hero-secondary" id="heroUploadBtn">Upload Chart</button>
+                        <div class="eyebrow">
+                            <span class="status-dot" aria-hidden="true"></span>
+                            Private registry
+                            <span class="eyebrow-divider" aria-hidden="true"></span>
+                            Helm charts
                         </div>
-                        <p class="hero-meta">
-                            <span id="totalCharts">0</span> charts · <span id="totalVersions">0</span> versions
-                        </p>
+                        <p class="hero-subtitle hero-copy">Discover, install, and distribute Helm charts<br class="desktop-break"> across your infrastructure with confidence.</p>
+                        <div class="hero-actions">
+                            <button type="button" class="primary-button btn-hero-primary" onclick="showView('charts')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                Browse charts
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                            <button type="button" class="secondary-button btn-hero-secondary" id="heroUploadBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Upload chart
+                            </button>
+                        </div>
+                        <div class="hero-meta">
+                            <span><strong id="totalCharts">0</strong> charts</span>
+                            <span class="meta-divider" aria-hidden="true"></span>
+                            <span><strong id="totalVersions">0</strong> versions</span>
+                            <span class="meta-divider" aria-hidden="true"></span>
+                            <span class="hero-sync">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                                Always in sync
+                            </span>
+                        </div>
                     </div>
 
-                    <div class="home-charts-preview">
-                        <div class="section-header">
-                            <h2 class="section-title">Latest Charts</h2>
-                            <button type="button" class="btn-view-all" onclick="showView('charts')">
+                    <div class="home-charts-preview charts-section">
+                        <div class="section-heading section-header">
+                            <div>
+                                <div class="section-kicker">Your collection</div>
+                                <h2 class="section-title">Latest charts</h2>
+                            </div>
+                            <button type="button" class="text-button btn-view-all" onclick="showView('charts')">
                                 View all charts
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                     <polyline points="12 5 19 12 12 19"></polyline>
                                 </svg>
                             </button>
                         </div>
-                        <div id="homeChartsGrid" class="charts-grid">
+                        <div id="homeChartsGrid" class="charts-grid chart-grid">
                             <!-- Preview of charts will be rendered here -->
                         </div>
                         <div id="homeEmptyState" class="empty-state" style="display: none;">
-                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
                             </svg>
-                            <h3>No charts yet</h3>
-                            <p>Upload your first chart to get started.</p>
+                            <p>No charts yet. Upload your first chart to get started.</p>
                         </div>
                     </div>
+
+                    <section class="quick-start" aria-label="Quick start">
+                        <div class="quick-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p>Quick start</p>
+                            <span>Add the repository to Helm with one command</span>
+                        </div>
+                        <code id="quickStartCommand">helm repo add pertisk http://localhost:7080</code>
+                        <button type="button" class="copy-button" id="copyQuickStartBtn" aria-label="Copy repository command">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </section>
+
+                    <footer class="app-footer">
+                        <span>© 2026 Pertisk Chart</span>
+                        <div>
+                            <a href="/api/charts">API</a>
+                            <a href="https://github.com/pertisk-tech" target="_blank" rel="noopener noreferrer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
+                                    <line x1="6" y1="3" x2="6" y2="15"></line>
+                                    <circle cx="18" cy="6" r="3"></circle>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <path d="M18 9a9 9 0 0 1-9 9"></path>
+                                </svg>
+                                GitHub
+                            </a>
+                            <a href="#status">
+                                <span class="status-dot" aria-hidden="true"></span>
+                                All systems operational
+                            </a>
+                        </div>
+                    </footer>
                 </section>
 
                 <!-- Charts Grid -->
                 <section class="charts-section" id="chartsView" style="display: none;">
-                    <div class="section-header">
-                        <h2 class="section-title">Available Charts</h2>
+                    <div class="section-heading section-header">
+                        <div>
+                            <div class="section-kicker">Repository</div>
+                            <h2 class="section-title">Available charts</h2>
+                        </div>
                         <div class="filters">
                             <div class="modern-dropdown" id="sortSelectDropdown">
                                 <button class="dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
@@ -221,7 +337,6 @@
                                     </li>
                                 </ul>
                             </div>
-                            <!-- Hidden select for compatibility -->
                             <select id="sortSelect" class="filter-select" style="display: none;">
                                 <option value="name">Sort by Name</option>
                                 <option value="recent">Most Recent</option>
@@ -229,14 +344,13 @@
                             </select>
                         </div>
                     </div>
-                    <div id="chartsGrid" class="charts-grid">
+                    <div id="chartsGrid" class="charts-grid chart-grid">
                         <!-- Charts will be loaded here -->
                     </div>
                     <div id="emptyState" class="empty-state" style="display: none;">
-                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
                         </svg>
                         <h3>No charts found</h3>
                         <p>Upload your first chart to get started</p>
@@ -245,10 +359,13 @@
 
                 <!-- My Charts Management View -->
                 <section class="charts-management-section" id="myChartsView" style="display: none;">
-                    <div class="section-header">
-                        <h2 class="section-title">My Charts</h2>
+                    <div class="section-heading section-header">
+                        <div>
+                            <div class="section-kicker">Workspace</div>
+                            <h2 class="section-title">My Charts</h2>
+                        </div>
                         <div class="management-actions">
-                            <button class="btn-primary" onclick="showModal('uploadModal')">
+                            <button class="btn-primary primary-button" onclick="showModal('uploadModal')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 4px;">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="17 8 12 3 7 8"></polyline>
@@ -310,7 +427,6 @@
                                 </li>
                             </ul>
                         </div>
-                        <!-- Hidden select for compatibility -->
                         <select id="managementSort" class="filter-select" style="display: none;">
                             <option value="name">Sort by Name</option>
                             <option value="recent">Most Recent</option>
@@ -319,7 +435,7 @@
                         </select>
                     </div>
 
-                    <div id="myChartsGrid" class="charts-grid">
+                    <div id="myChartsGrid" class="charts-grid chart-grid">
                         <!-- My charts will be loaded here -->
                     </div>
                     <div id="myChartsEmpty" class="empty-state" style="display: none;">
@@ -372,7 +488,6 @@
                             </button>
                         </div>
 
-                        <!-- System Settings Tab -->
                         <div class="admin-tab-content active" id="admin-system">
                             <div class="admin-card">
                                 <h3 class="admin-card-title">System Configuration</h3>
@@ -402,7 +517,6 @@
                             </div>
                         </div>
 
-                        <!-- Domain Configuration Tab -->
                         <div class="admin-tab-content" id="admin-domain">
                             <div class="admin-card">
                                 <h3 class="admin-card-title">Repository Domain</h3>
@@ -434,7 +548,6 @@
                             </div>
                         </div>
 
-                        <!-- User Management Tab -->
                         <div class="admin-tab-content" id="admin-users">
                             <div class="admin-card">
                                 <h3 class="admin-card-title">User Management</h3>
@@ -446,64 +559,74 @@
                         </div>
                     </div>
                 </section>
-                </div>
-            </div>
-        </div>
 
-        <!-- Login Modal -->
-        <div id="loginModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Login</h3>
-                    <button class="modal-close" id="closeLoginModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label for="loginUsername" class="form-label">Username</label>
-                            <input type="text" id="loginUsername" class="form-input" required>
+                <!-- Login Page -->
+                <section class="auth-section" id="loginView" style="display: none;">
+                    <div class="auth-page">
+                        <div class="auth-card">
+                            <div class="eyebrow">
+                                <span class="status-dot" aria-hidden="true"></span>
+                                Account
+                            </div>
+                            <h1 class="auth-title">Welcome back</h1>
+                            <p class="auth-subtitle">Sign in to upload charts and manage your workspace.</p>
+                            <form id="loginForm" class="auth-form">
+                                <div class="form-group">
+                                    <label for="loginUsername" class="form-label">Username</label>
+                                    <input type="text" id="loginUsername" class="form-input" required autocomplete="username">
+                                </div>
+                                <div class="form-group">
+                                    <label for="loginPassword" class="form-label">Password</label>
+                                    <input type="password" id="loginPassword" class="form-input" required autocomplete="current-password">
+                                </div>
+                                <div id="loginStatus" class="upload-status"></div>
+                                <div class="auth-actions">
+                                    <button type="submit" class="btn-primary primary-button auth-submit">Login</button>
+                                </div>
+                            </form>
+                            <p class="auth-switch">
+                                Don’t have an account?
+                                <button type="button" class="text-button" id="goToRegisterBtn">Create one</button>
+                            </p>
                         </div>
-                        <div class="form-group">
-                            <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" id="loginPassword" class="form-input" required>
-                        </div>
-                        <div id="loginStatus" class="upload-status"></div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" id="cancelLogin">Cancel</button>
-                            <button type="submit" class="btn-primary">Login</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+                    </div>
+                </section>
 
-        <!-- Register Modal -->
-        <div id="registerModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Register</h3>
-                    <button class="modal-close" id="closeRegisterModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="registerForm">
-                        <div class="form-group">
-                            <label for="registerUsername" class="form-label">Username</label>
-                            <input type="text" id="registerUsername" class="form-input" required minlength="3">
+                <!-- Register Page -->
+                <section class="auth-section" id="registerView" style="display: none;">
+                    <div class="auth-page">
+                        <div class="auth-card">
+                            <div class="eyebrow">
+                                <span class="status-dot" aria-hidden="true"></span>
+                                Account
+                            </div>
+                            <h1 class="auth-title">Create account</h1>
+                            <p class="auth-subtitle">Register to publish charts to your private repository.</p>
+                            <form id="registerForm" class="auth-form">
+                                <div class="form-group">
+                                    <label for="registerUsername" class="form-label">Username</label>
+                                    <input type="text" id="registerUsername" class="form-input" required minlength="3" autocomplete="username">
+                                </div>
+                                <div class="form-group">
+                                    <label for="registerEmail" class="form-label">Email</label>
+                                    <input type="email" id="registerEmail" class="form-input" required autocomplete="email">
+                                </div>
+                                <div class="form-group">
+                                    <label for="registerPassword" class="form-label">Password</label>
+                                    <input type="password" id="registerPassword" class="form-input" required minlength="6" autocomplete="new-password">
+                                </div>
+                                <div id="registerStatus" class="upload-status"></div>
+                                <div class="auth-actions">
+                                    <button type="submit" class="btn-primary primary-button auth-submit">Register</button>
+                                </div>
+                            </form>
+                            <p class="auth-switch">
+                                Already have an account?
+                                <button type="button" class="text-button" id="goToLoginBtn">Sign in</button>
+                            </p>
                         </div>
-                        <div class="form-group">
-                            <label for="registerEmail" class="form-label">Email</label>
-                            <input type="email" id="registerEmail" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="registerPassword" class="form-label">Password</label>
-                            <input type="password" id="registerPassword" class="form-input" required minlength="6">
-                        </div>
-                        <div id="registerStatus" class="upload-status"></div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" id="cancelRegister">Cancel</button>
-                            <button type="submit" class="btn-primary">Register</button>
-                        </div>
-                    </form>
+                    </div>
+                </section>
                 </div>
             </div>
         </div>
@@ -532,12 +655,10 @@
         </div>
     </div>
 
-    <!-- CodeMirror for YAML editor -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js"></script>
-    <!-- Marked.js for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/static/js/app.js?v=3.3"></script>
+    <script src="/static/js/app.js?v=4.4"></script>
 </body>
 </html>

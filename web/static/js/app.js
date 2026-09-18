@@ -132,6 +132,29 @@ function setupEventListeners() {
     // Sidebar shell controls
     setupSidebarShell();
 
+    const sidebarPublishBtn = document.getElementById('sidebarPublishBtn');
+    if (sidebarPublishBtn) {
+        sidebarPublishBtn.addEventListener('click', () => {
+            if (state.token) showModal('uploadModal');
+            else showView('login');
+        });
+    }
+
+    const copyQuickStartBtn = document.getElementById('copyQuickStartBtn');
+    if (copyQuickStartBtn) {
+        copyQuickStartBtn.addEventListener('click', async () => {
+            const code = document.getElementById('quickStartCommand');
+            const text = code ? code.textContent : '';
+            try {
+                await navigator.clipboard.writeText(text);
+                copyQuickStartBtn.setAttribute('aria-label', 'Copied');
+                setTimeout(() => copyQuickStartBtn.setAttribute('aria-label', 'Copy repository command'), 1500);
+            } catch (_) {
+                /* ignore */
+            }
+        });
+    }
+
     // User menu dropdown
     const userMenuTrigger = document.getElementById('userMenuTrigger');
     const userMenu = document.getElementById('userMenu');
@@ -177,7 +200,7 @@ function setupEventListeners() {
     if (uploadBtn) {
         uploadBtn.addEventListener('click', () => {
             if (!state.token) {
-                showModal('loginModal');
+                showView('login');
                 return;
             }
             showModal('uploadModal');
@@ -188,7 +211,7 @@ function setupEventListeners() {
     if (heroUploadBtn) {
         heroUploadBtn.addEventListener('click', () => {
             if (!state.token) {
-                showModal('loginModal');
+                showView('login');
                 return;
             }
             showModal('uploadModal');
@@ -217,10 +240,18 @@ function setupEventListeners() {
     const logoutBtn = document.getElementById('logoutBtn');
     
     if (loginBtn) {
-        loginBtn.addEventListener('click', () => showModal('loginModal'));
+        loginBtn.addEventListener('click', () => showView('login'));
     }
     if (registerBtn) {
-        registerBtn.addEventListener('click', () => showModal('registerModal'));
+        registerBtn.addEventListener('click', () => showView('register'));
+    }
+    const goToRegisterBtn = document.getElementById('goToRegisterBtn');
+    const goToLoginBtn = document.getElementById('goToLoginBtn');
+    if (goToRegisterBtn) {
+        goToRegisterBtn.addEventListener('click', () => showView('register'));
+    }
+    if (goToLoginBtn) {
+        goToLoginBtn.addEventListener('click', () => showView('login'));
     }
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
@@ -239,8 +270,6 @@ function setupEventListeners() {
     }
 
     // Modal close handlers
-    setupModalClose('loginModal', 'closeLoginModal', 'cancelLogin');
-    setupModalClose('registerModal', 'closeRegisterModal', 'cancelRegister');
     setupModalClose('uploadModal', 'closeModal', 'cancelUpload');
 }
 
@@ -365,35 +394,56 @@ function renderHomeCharts() {
 }
 
 // Create chart card HTML
+function chartAccent(name) {
+    const accents = ['violet', 'blue', 'amber'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i) * (i + 1)) % accents.length;
+    return accents[hash];
+}
+
+function formatUpdatedLabel(chart) {
+    const latest = chart.versions && chart.versions.length > 0 ? chart.versions[0] : null;
+    if (!latest || !latest.created) return 'Updated recently';
+    const then = new Date(latest.created);
+    if (Number.isNaN(then.getTime())) return 'Updated recently';
+    const diffMs = Date.now() - then.getTime();
+    const hours = Math.floor(diffMs / 3600000);
+    if (hours < 1) return 'Updated just now';
+    if (hours < 24) return `Updated ${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'Updated yesterday';
+    if (days < 7) return `Updated ${days}d ago`;
+    return `Updated ${then.toLocaleDateString()}`;
+}
+
 function createChartCard(chart) {
     const latestVersion = chart.versions && chart.versions.length > 0 ? chart.versions[0] : null;
     const versionCount = chart.versions ? chart.versions.length : 0;
-    
+    const accent = chartAccent(chart.name || '');
+
     return `
-        <div class="chart-card" data-chart-name="${chart.name}">
-            <div class="chart-header">
-                ${chart.icon ? `<img src="${chart.icon}" alt="${chart.name}" class="chart-icon" onerror="this.style.display='none'">` : ''}
-                <div style="flex: 1;">
-                    <h3 class="chart-title">
-                        <a href="/charts/${encodeURIComponent(chart.name)}" onclick="event.preventDefault(); showChartDetail('${chart.name}'); return false;">${escapeHtml(chart.name)}</a>
-                    </h3>
-                    <p class="chart-description">${escapeHtml(chart.description || 'No description available')}</p>
-                </div>
+        <article class="chart-card" data-chart-name="${escapeHtml(chart.name)}">
+            <div class="chart-symbol ${accent}">
+                ${chart.icon
+                    ? `<img src="${chart.icon}" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.remove()">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`}
             </div>
-            <div class="chart-meta">
-                <div class="chart-meta-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
+            <div class="card-topline">
+                <span class="category">Helm chart</span>
+                <span class="more-button" aria-hidden="true"><span class="more-dots"><i></i><i></i><i></i></span></span>
+            </div>
+            <h3 class="chart-title">
+                <a href="/charts/${encodeURIComponent(chart.name)}" onclick="event.preventDefault(); showChartDetail('${chart.name}'); return false;">${escapeHtml(chart.name)}</a>
+            </h3>
+            <p class="chart-description">${escapeHtml(chart.description || 'No description available')}</p>
+            <div class="card-footer">
+                <div class="version-info">
                     <span>${versionCount} version${versionCount !== 1 ? 's' : ''}</span>
+                    ${latestVersion ? `<span class="version-pill">${escapeHtml(latestVersion.version)}</span>` : ''}
                 </div>
-                ${latestVersion ? `
-                <div class="chart-meta-item">
-                    <span class="version-badge">${escapeHtml(latestVersion.version)}</span>
-                </div>
-                ` : ''}
+                <span class="updated">${formatUpdatedLabel(chart)}</span>
             </div>
-        </div>
+        </article>
     `;
 }
 
@@ -534,94 +584,91 @@ function renderChartDetailContent(chart) {
 
     const latestVersion = chart.versions && chart.versions.length > 0 ? chart.versions[0] : null;
     const versionCount = chart.versions ? chart.versions.length : 0;
-    
-    // Format default values
-    const defaultIcon = '<svg class="detail-icon-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
-    const displayIcon = chart.icon ? 
-        `<img src="${chart.icon}" alt="${chart.name}" class="detail-icon" onerror="this.outerHTML='${defaultIcon.replace(/'/g, "\\'")}'">` : 
-        defaultIcon;
+    const accent = chartAccent(chart.name || '');
     
     const displayDescription = chart.description || 'No description available for this chart.';
-    const displayHome = chart.home || 'Not specified';
     const displayLatestVersion = latestVersion ? latestVersion.version : 'N/A';
     const displayAppVersion = latestVersion && latestVersion.appVersion ? latestVersion.appVersion : 'N/A';
     const displayCreated = latestVersion && latestVersion.created ? 
         new Date(latestVersion.created).toLocaleDateString() : 'N/A';
+    const latestDownloadUrl = latestVersion && latestVersion.urls && latestVersion.urls.length > 0
+        ? latestVersion.urls[0]
+        : null;
+
+    const symbolHtml = chart.icon
+        ? `<img src="${chart.icon}" alt="" class="detail-symbol-img" onerror="this.remove()">`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`;
 
     detailView.innerHTML = `
-        <div class="detail-header">
-            <div class="detail-icon-wrapper">
-                ${displayIcon}
-            </div>
-            <div class="detail-info">
-                <div class="detail-title-section">
-                    <h1 class="detail-title">${escapeHtml(chart.name)}</h1>
-                    ${latestVersion ? `<span class="detail-latest-badge">v${escapeHtml(latestVersion.version)}</span>` : ''}
-                </div>
-                <p class="detail-description">${escapeHtml(displayDescription)}</p>
-                
-                <div class="detail-meta-grid">
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="meta-icon">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                            </svg>
-                            Versions
-                        </span>
-                        <span class="detail-meta-value">${versionCount}</span>
-                    </div>
-                    
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="meta-icon">
-                                <path d="M20 6L9 17l-5-5"></path>
-                            </svg>
-                            Latest Version
-                        </span>
-                        <span class="detail-meta-value">${escapeHtml(displayLatestVersion)}</span>
-                    </div>
-                    
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="meta-icon">
-                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                <line x1="8" y1="21" x2="16" y2="21"></line>
-                                <line x1="12" y1="17" x2="12" y2="21"></line>
-                            </svg>
-                            App Version
-                        </span>
-                        <span class="detail-meta-value">${escapeHtml(displayAppVersion)}</span>
-                    </div>
-                    
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="meta-icon">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                            </svg>
-                            Home
-                        </span>
-                        <span class="detail-meta-value">
-                            ${chart.home ? 
-                                `<a href="${chart.home}" target="_blank" rel="noopener noreferrer">${escapeHtml(displayHome)}</a>` : 
-                                `<span class="text-muted">${escapeHtml(displayHome)}</span>`
-                            }
-                        </span>
-                    </div>
-                    
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="meta-icon">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            Created
-                        </span>
-                        <span class="detail-meta-value">${escapeHtml(displayCreated)}</span>
+        <div class="detail-page">
+            <button type="button" class="text-button detail-back" onclick="showView('charts')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to charts
+            </button>
+
+            <header class="detail-hero">
+                <div class="detail-hero-main">
+                    <div class="chart-symbol ${accent} detail-symbol">${symbolHtml}</div>
+                    <div class="detail-hero-copy">
+                        <div class="eyebrow">
+                            <span class="status-dot" aria-hidden="true"></span>
+                            Helm chart
+                            <span class="eyebrow-divider" aria-hidden="true"></span>
+                            ${versionCount} version${versionCount !== 1 ? 's' : ''}
+                        </div>
+                        <h1 class="detail-title">${escapeHtml(chart.name)}</h1>
+                        <p class="detail-description">${escapeHtml(displayDescription)}</p>
+                        <div class="detail-actions">
+                            <button type="button" class="primary-button" onclick="switchChartDetailTab('installation')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                </svg>
+                                Install
+                            </button>
+                            ${latestDownloadUrl ? `
+                            <a class="secondary-button" href="${latestDownloadUrl}" download>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download latest
+                            </a>` : ''}
+                            ${chart.home ? `
+                            <a class="secondary-button" href="${chart.home}" target="_blank" rel="noopener noreferrer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                Homepage
+                            </a>` : ''}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+
+                <div class="detail-meta-row">
+                    <div class="detail-meta-chip">
+                        <span>Latest</span>
+                        <strong class="version-pill">${escapeHtml(displayLatestVersion)}</strong>
+                    </div>
+                    <div class="detail-meta-chip">
+                        <span>App version</span>
+                        <strong>${escapeHtml(displayAppVersion)}</strong>
+                    </div>
+                    <div class="detail-meta-chip">
+                        <span>Updated</span>
+                        <strong>${escapeHtml(displayCreated)}</strong>
+                    </div>
+                    <div class="detail-meta-chip">
+                        <span>Versions</span>
+                        <strong>${versionCount}</strong>
+                    </div>
+                </div>
+            </header>
         
         <!-- Chart Detail Tabs -->
         <div class="chart-detail-tabs-container">
@@ -630,7 +677,7 @@ function renderChartDetailContent(chart) {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
-                    Available Versions
+                    Versions
                     ${versionCount > 0 ? `<span class="tab-badge">${versionCount}</span>` : ''}
                 </button>
                 <button class="chart-detail-tab" data-tab="installation" onclick="switchChartDetailTab('installation')">
@@ -656,7 +703,7 @@ function renderChartDetailContent(chart) {
                         <line x1="16" y1="13" x2="8" y2="13"></line>
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
-                    Default Values
+                    Values
                 </button>
                 <button class="chart-detail-tab" data-tab="resources" onclick="switchChartDetailTab('resources')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
@@ -689,32 +736,36 @@ function renderChartDetailContent(chart) {
             <!-- Versions Tab Content -->
             <div class="chart-detail-tab-content active" id="chart-detail-versions">
                 <div class="versions-section">
-                    <div class="section-header-inline">
-                        <h2 class="section-title">Available Versions</h2>
+                    <div class="section-heading section-header-inline">
+                        <div>
+                            <div class="section-kicker">Releases</div>
+                            <h2 class="section-title">Available versions</h2>
+                        </div>
                         <span class="version-count-badge">${versionCount} version${versionCount !== 1 ? 's' : ''}</span>
                     </div>
                     <ul class="versions-list">
                 ${chart.versions && chart.versions.length > 0 ? 
                     chart.versions.map((v, index) => `
-                        <li class="version-item">
+                        <li class="version-item${index === 0 ? ' is-latest' : ''}">
                             <div class="version-info">
                                 <div class="version-badge-large">${escapeHtml(v.version)}</div>
                                 <div class="version-details">
+                                    ${index === 0 ? `<div class="version-detail-row"><span class="category">Latest</span></div>` : ''}
                                     ${v.appVersion ? `
                                         <div class="version-detail-row">
-                                            <span class="version-detail-label">App Version:</span>
+                                            <span class="version-detail-label">App</span>
                                             <span class="version-detail-value">${escapeHtml(v.appVersion)}</span>
                                         </div>
                                     ` : ''}
                                     ${v.created ? `
                                         <div class="version-detail-row">
-                                            <span class="version-detail-label">Created:</span>
+                                            <span class="version-detail-label">Created</span>
                                             <span class="version-detail-value">${new Date(v.created).toLocaleDateString()}</span>
                                         </div>
                                     ` : ''}
                                     ${v.description ? `
                                         <div class="version-detail-row">
-                                            <span class="version-detail-label">Description:</span>
+                                            <span class="version-detail-label">Notes</span>
                                             <span class="version-detail-value">${escapeHtml(v.description)}</span>
                                         </div>
                                     ` : ''}
@@ -722,8 +773,8 @@ function renderChartDetailContent(chart) {
                             </div>
                             <div class="version-actions">
                                 ${v.urls && v.urls.length > 0 ? `
-                                    <a href="${v.urls[0]}" class="btn-download" download title="Download ${escapeHtml(chart.name)} ${escapeHtml(v.version)}">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                                    <a href="${v.urls[0]}" class="secondary-button btn-download" download title="Download ${escapeHtml(chart.name)} ${escapeHtml(v.version)}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                             <polyline points="7 10 12 15 17 10"></polyline>
                                             <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -733,7 +784,7 @@ function renderChartDetailContent(chart) {
                                 ` : ''}
                                 ${state.token ? `
                                     <button class="btn-delete" onclick="deleteChart('${escapeHtml(chart.name)}', '${escapeHtml(v.version)}')" title="Delete version ${escapeHtml(v.version)}">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
                                             <polyline points="3 6 5 6 21 6"></polyline>
                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                         </svg>
@@ -746,11 +797,6 @@ function renderChartDetailContent(chart) {
                     : `
                     <li class="version-item-empty">
                         <div class="empty-version-message">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin-bottom: var(--spacing-md); opacity: 0.5;">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                            </svg>
                             <p>No versions available for this chart</p>
                         </div>
                     </li>
@@ -1966,6 +2012,15 @@ function updateStats() {
     if (versionsEl) versionsEl.textContent = totalVersions;
 
     renderHomeCharts();
+    updateQuickStartCommand();
+}
+
+function updateQuickStartCommand() {
+    const el = document.getElementById('quickStartCommand');
+    if (!el) return;
+    const name = (typeof repositoryName !== 'undefined' && repositoryName) ? repositoryName : 'pertisk';
+    const domain = (typeof repositoryDomain !== 'undefined' && repositoryDomain) ? repositoryDomain : 'http://localhost:7080';
+    el.textContent = `helm repo add ${name} ${domain}`;
 }
 
 // URL Routing
@@ -1994,6 +2049,10 @@ function getRouteFromPath(path) {
             return { view: 'myCharts', params: {} };
         case 'admin':
             return { view: 'admin', params: {} };
+        case 'login':
+            return { view: 'login', params: {} };
+        case 'register':
+            return { view: 'register', params: {} };
         default:
             return { view: 'home', params: {} };
     }
@@ -2016,6 +2075,12 @@ function updateURL(viewName, params = {}) {
             break;
         case 'admin':
             path = '/admin';
+            break;
+        case 'login':
+            path = '/login';
+            break;
+        case 'register':
+            path = '/register';
             break;
         case 'chartDetail':
             if (params.chartName) {
@@ -2066,11 +2131,14 @@ function showViewInternal(viewName, params = {}) {
     const myChartsView = document.getElementById('myChartsView');
     const detailView = document.getElementById('chartDetailView');
     const adminView = document.getElementById('adminView');
+    const loginView = document.getElementById('loginView');
+    const registerView = document.getElementById('registerView');
 
     // Hide all sections
     if (homeView) {
         homeView.style.display = 'none';
         homeView.style.visibility = 'hidden';
+        homeView.classList.remove('is-visible');
     }
     if (chartsView) {
         chartsView.style.display = 'none';
@@ -2088,6 +2156,14 @@ function showViewInternal(viewName, params = {}) {
         adminView.style.display = 'none';
         adminView.style.visibility = 'hidden';
     }
+    if (loginView) {
+        loginView.style.display = 'none';
+        loginView.style.visibility = 'hidden';
+    }
+    if (registerView) {
+        registerView.style.display = 'none';
+        registerView.style.visibility = 'hidden';
+    }
 
     // Show selected view
     switch (viewName) {
@@ -2095,6 +2171,9 @@ function showViewInternal(viewName, params = {}) {
             if (homeView) {
                 homeView.style.display = 'flex';
                 homeView.style.visibility = 'visible';
+                homeView.classList.add('is-visible');
+                renderHomeCharts();
+                updateQuickStartCommand();
             }
             break;
         case 'charts':
@@ -2116,6 +2195,24 @@ function showViewInternal(viewName, params = {}) {
                 adminView.style.display = 'block';
                 adminView.style.visibility = 'visible';
                 loadAdminData();
+            }
+            break;
+        case 'login':
+            if (loginView) {
+                loginView.style.display = 'flex';
+                loginView.style.visibility = 'visible';
+                clearStatus('loginStatus');
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) loginForm.reset();
+            }
+            break;
+        case 'register':
+            if (registerView) {
+                registerView.style.display = 'flex';
+                registerView.style.visibility = 'visible';
+                clearStatus('registerStatus');
+                const registerForm = document.getElementById('registerForm');
+                if (registerForm) registerForm.reset();
             }
             break;
         case 'chartDetail':
@@ -2162,6 +2259,7 @@ function showViewInternal(viewName, params = {}) {
             if (homeView) {
                 homeView.style.display = 'flex';
                 homeView.style.visibility = 'visible';
+                homeView.classList.add('is-visible');
             }
     }
 }
@@ -2179,17 +2277,7 @@ function showModal(modalId) {
         document.body.style.overflow = 'hidden';
         
         // Clear status messages when opening modals
-        if (modalId === 'loginModal') {
-            clearStatus('loginStatus');
-            // Also reset the form
-            const loginForm = document.getElementById('loginForm');
-            if (loginForm) loginForm.reset();
-        } else if (modalId === 'registerModal') {
-            clearStatus('registerStatus');
-            // Also reset the form
-            const registerForm = document.getElementById('registerForm');
-            if (registerForm) registerForm.reset();
-        } else if (modalId === 'uploadModal') {
+        if (modalId === 'uploadModal') {
             clearStatus('uploadStatus');
             // Also reset the form
             const uploadForm = document.getElementById('uploadForm');
@@ -2205,11 +2293,7 @@ function hideModal(modalId) {
         document.body.style.overflow = 'hidden';
         
         // Clear status messages when closing modals
-        if (modalId === 'loginModal') {
-            clearStatus('loginStatus');
-        } else if (modalId === 'registerModal') {
-            clearStatus('registerStatus');
-        } else if (modalId === 'uploadModal') {
+        if (modalId === 'uploadModal') {
             clearStatus('uploadStatus');
         }
     }
@@ -2295,10 +2379,11 @@ async function handleLogin(e) {
             localStorage.setItem('auth_token', data.token);
             showStatus(statusDiv, 'Login successful!', 'success');
             setTimeout(() => {
-                hideModal('loginModal');
                 updateAuthUI();
                 document.getElementById('loginForm').reset();
-            }, 1000);
+                clearStatus('loginStatus');
+                showView('home');
+            }, 600);
         } else {
             showStatus(statusDiv, `Error: ${data.error}`, 'error');
         }
@@ -2333,10 +2418,11 @@ async function handleRegister(e) {
             localStorage.setItem('auth_token', data.token);
             showStatus(statusDiv, 'Registration successful!', 'success');
             setTimeout(() => {
-                hideModal('registerModal');
                 updateAuthUI();
                 document.getElementById('registerForm').reset();
-            }, 1000);
+                clearStatus('registerStatus');
+                showView('home');
+            }, 600);
         } else {
             showStatus(statusDiv, `Error: ${data.error}`, 'error');
         }
@@ -2367,8 +2453,6 @@ function handleLogout() {
     clearStatus('uploadStatus');
     
     // Close any open modals
-    hideModal('loginModal');
-    hideModal('registerModal');
     hideModal('uploadModal');
     
     updateAuthUI();
@@ -2376,11 +2460,13 @@ function handleLogout() {
 
 const SIDEBAR_COLLAPSED_KEY = 'pertisk_chart_sidebar_collapsed';
 const VIEW_TITLES = {
-    home: 'Home',
-    charts: 'Browse',
+    home: 'Overview',
+    charts: 'Browse charts',
     myCharts: 'My Charts',
     admin: 'Admin',
-    chartDetail: 'Chart Detail'
+    chartDetail: 'Chart Detail',
+    login: 'Login',
+    register: 'Register'
 };
 
 function setupSidebarShell() {
@@ -2511,18 +2597,24 @@ function updateAuthUI() {
     const myChartsLink = document.getElementById('myChartsLink');
     const adminLink = document.getElementById('adminLink');
 
+    const sidebarAvatar = document.getElementById('sidebarAvatar');
+    const sidebarProfileName = document.getElementById('sidebarProfileName');
+
     if (state.token && state.user) {
         if (authButtons) authButtons.style.display = 'none';
         if (userMenu) userMenu.style.display = 'flex';
         if (usernameDisplay) usernameDisplay.textContent = state.user.username;
-        if (userAvatarInitial) {
-            userAvatarInitial.textContent = (state.user.username || 'U').charAt(0).toUpperCase();
-        }
+        const initial = (state.user.username || 'U').charAt(0).toUpperCase();
+        if (userAvatarInitial) userAvatarInitial.textContent = initial;
+        if (sidebarAvatar) sidebarAvatar.textContent = initial;
+        if (sidebarProfileName) sidebarProfileName.textContent = state.user.username;
         if (myChartsLink) myChartsLink.style.display = 'flex';
         if (adminLink) adminLink.style.display = state.user.is_admin ? 'flex' : 'none';
     } else {
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
+        if (sidebarAvatar) sidebarAvatar.textContent = 'PC';
+        if (sidebarProfileName) sidebarProfileName.textContent = 'Guest';
         if (myChartsLink) myChartsLink.style.display = 'none';
         if (adminLink) adminLink.style.display = 'none';
     }
@@ -2624,54 +2716,46 @@ function renderMyCharts() {
 function createManagementChartCard(chart) {
     const latestVersion = chart.versions && chart.versions.length > 0 ? chart.versions[0] : null;
     const versionCount = chart.versions ? chart.versions.length : 0;
-    const totalSize = chart.versions ? chart.versions.reduce((sum, v) => sum + (v.size || 0), 0) : 0;
-    
+    const accent = chartAccent(chart.name || '');
+
     return `
-        <div class="chart-card-management" data-chart-name="${chart.name}">
+        <article class="chart-card chart-card-management" data-chart-name="${escapeHtml(chart.name)}">
             <div class="chart-actions-menu" onclick="event.stopPropagation();">
-                <button class="chart-action-btn" onclick="showChartDetail('${chart.name}')" title="View Details">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="chart-action-btn" onclick="showChartDetail('${chart.name}')" title="View Details">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                 </button>
                 ${latestVersion ? `
-                <button class="chart-action-btn" onclick="deleteChart('${chart.name}', '${latestVersion.version}')" title="Delete Latest Version">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="chart-action-btn" onclick="deleteChart('${chart.name}', '${latestVersion.version}')" title="Delete Latest Version">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
                 </button>
                 ` : ''}
             </div>
-            <div class="chart-header">
-                ${chart.icon ? `<img src="${chart.icon}" alt="${chart.name}" class="chart-icon" onerror="this.style.display='none'">` : ''}
-                <div style="flex: 1;">
-                    <h3 class="chart-title">
-                        <a href="/charts/${encodeURIComponent(chart.name)}" onclick="event.preventDefault(); showChartDetail('${chart.name}'); return false;">${escapeHtml(chart.name)}</a>
-                    </h3>
-                    <p class="chart-description">${escapeHtml(chart.description || 'No description available')}</p>
-                </div>
+            <div class="chart-symbol ${accent}">
+                ${chart.icon
+                    ? `<img src="${chart.icon}" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.remove()">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`}
             </div>
-            <div class="chart-management-info">
-                <div class="chart-info-row">
-                    <span class="chart-info-label">Versions:</span>
-                    <span class="chart-info-value">${versionCount}</span>
-                </div>
-                ${latestVersion ? `
-                <div class="chart-info-row">
-                    <span class="chart-info-label">Latest:</span>
-                    <span class="chart-info-value">${escapeHtml(latestVersion.version)}</span>
-                </div>
-                ` : ''}
-                ${chart.home ? `
-                <div class="chart-info-row">
-                    <span class="chart-info-label">Home:</span>
-                    <a href="${chart.home}" target="_blank" class="chart-info-value" style="color: var(--primary); text-decoration: none;">${escapeHtml(chart.home)}</a>
-                </div>
-                ` : ''}
+            <div class="card-topline">
+                <span class="category">Helm chart</span>
             </div>
-        </div>
+            <h3 class="chart-title">
+                <a href="/charts/${encodeURIComponent(chart.name)}" onclick="event.preventDefault(); showChartDetail('${chart.name}'); return false;">${escapeHtml(chart.name)}</a>
+            </h3>
+            <p class="chart-description">${escapeHtml(chart.description || 'No description available')}</p>
+            <div class="card-footer">
+                <div class="version-info">
+                    <span>${versionCount} version${versionCount !== 1 ? 's' : ''}</span>
+                    ${latestVersion ? `<span class="version-pill">${escapeHtml(latestVersion.version)}</span>` : ''}
+                </div>
+                <span class="updated">${formatUpdatedLabel(chart)}</span>
+            </div>
+        </article>
     `;
 }
 
@@ -3302,6 +3386,11 @@ function initializeTheme() {
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
+    const shell = document.getElementById('app');
+    if (shell) {
+        shell.classList.toggle('dark', theme === 'dark');
+        shell.classList.toggle('light', theme === 'light');
+    }
     updateThemeIcon(theme);
     // Update CodeMirror theme for all editors
     updateCodeMirrorThemes(theme);
