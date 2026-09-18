@@ -8,6 +8,9 @@ Type=simple
 User=pertisk-chart
 Group=pertisk-chart
 EnvironmentFile=-/etc/pertisk-chart/config.conf
+# create-admin is often run as root and leaves users.db root-owned; fix before start
+ExecStartPre=+/usr/bin/mkdir -p /var/lib/pertisk-chart /var/lib/pertisk-chart/chartstorage /var/log/pertisk-chart
+ExecStartPre=+/usr/bin/chown -R pertisk-chart:pertisk-chart /var/lib/pertisk-chart /var/log/pertisk-chart
 ExecStart=/usr/libexec/pertisk-chart
 Restart=always
 RestartSec=5
