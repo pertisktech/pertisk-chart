@@ -250,6 +250,7 @@ function setupEventListeners() {
     if (uploadForm) {
         uploadForm.addEventListener('submit', handleUpload);
     }
+    setupChartFileDropzone();
 
     // Auth buttons
     const loginBtn = document.getElementById('loginBtn');
@@ -1919,10 +1920,144 @@ function applyFilters() {
 }
 
 // Handle upload
+function formatFileSize(bytes) {
+    if (!Number.isFinite(bytes) || bytes < 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isChartPackageFile(file) {
+    if (!file || !file.name) return false;
+    return /\.tgz$/i.test(file.name) || /\.tar\.gz$/i.test(file.name);
+}
+
+function updateChartFileDropzone(file) {
+    const dropzone = document.getElementById('chartFileDropzone');
+    const idle = document.getElementById('chartFileIdle');
+    const selected = document.getElementById('chartFileSelected');
+    const nameEl = document.getElementById('chartFileName');
+    const sizeEl = document.getElementById('chartFileSize');
+    const submitBtn = document.getElementById('uploadSubmitBtn');
+
+    if (!dropzone || !idle || !selected) return;
+
+    if (file) {
+        dropzone.classList.add('has-file');
+        idle.hidden = true;
+        selected.hidden = false;
+        if (nameEl) nameEl.textContent = file.name;
+        if (sizeEl) sizeEl.textContent = formatFileSize(file.size);
+        if (submitBtn) submitBtn.disabled = false;
+    } else {
+        dropzone.classList.remove('has-file', 'is-dragging');
+        idle.hidden = false;
+        selected.hidden = true;
+        if (nameEl) nameEl.textContent = '';
+        if (sizeEl) sizeEl.textContent = '';
+        if (submitBtn) submitBtn.disabled = true;
+    }
+}
+
+function clearChartFileSelection() {
+    const fileInput = document.getElementById('chartFile');
+    if (fileInput) fileInput.value = '';
+    updateChartFileDropzone(null);
+}
+
+function assignChartFile(file, statusDiv) {
+    const fileInput = document.getElementById('chartFile');
+    if (!fileInput) return false;
+
+    if (!isChartPackageFile(file)) {
+        clearChartFileSelection();
+        if (statusDiv) showStatus(statusDiv, 'Please select a .tgz chart package', 'error');
+        return false;
+    }
+
+    try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+    } catch (err) {
+        // Fallback: rely on native input change when click-browse is used
+    }
+
+    updateChartFileDropzone(file);
+    if (statusDiv) clearStatus('uploadStatus');
+    return true;
+}
+
+function setupChartFileDropzone() {
+    const dropzone = document.getElementById('chartFileDropzone');
+    const fileInput = document.getElementById('chartFile');
+    const clearBtn = document.getElementById('chartFileClear');
+    const statusDiv = document.getElementById('uploadStatus');
+    if (!dropzone || !fileInput) return;
+
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+            updateChartFileDropzone(null);
+            return;
+        }
+        if (!isChartPackageFile(file)) {
+            clearChartFileSelection();
+            showStatus(statusDiv, 'Please select a .tgz chart package', 'error');
+            return;
+        }
+        updateChartFileDropzone(file);
+        clearStatus('uploadStatus');
+    });
+
+    ;['dragenter', 'dragover'].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!dropzone.classList.contains('has-file')) {
+                dropzone.classList.add('is-dragging');
+            }
+        });
+    });
+
+    ;['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('is-dragging');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) assignChartFile(file, statusDiv);
+    });
+
+    dropzone.addEventListener('keydown', (e) => {
+        if (dropzone.classList.contains('has-file')) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearChartFileSelection();
+            clearStatus('uploadStatus');
+        });
+    }
+
+    updateChartFileDropzone(null);
+}
+
 async function handleUpload(e) {
     e.preventDefault();
     const fileInput = document.getElementById('chartFile');
     const statusDiv = document.getElementById('uploadStatus');
+    const submitBtn = document.getElementById('uploadSubmitBtn');
     
     if (!fileInput || !fileInput.files[0]) {
         showStatus(statusDiv, 'Please select a chart file', 'error');
@@ -1933,6 +2068,7 @@ async function handleUpload(e) {
     formData.append('chart', fileInput.files[0]);
 
     showStatus(statusDiv, 'Uploading...', 'info');
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
         const headers = {};
@@ -1950,7 +2086,7 @@ async function handleUpload(e) {
 
         if (response.ok) {
             showStatus(statusDiv, `Chart ${data.name} v${data.version} uploaded successfully!`, 'success');
-            fileInput.value = '';
+            clearChartFileSelection();
             setTimeout(async () => {
                 hideModal('uploadModal');
                 await loadCharts();
@@ -1961,9 +2097,11 @@ async function handleUpload(e) {
             }, 1500);
         } else {
             showStatus(statusDiv, `Error: ${data.error}`, 'error');
+            if (submitBtn && fileInput.files[0]) submitBtn.disabled = false;
         }
     } catch (error) {
         showStatus(statusDiv, `Error: ${error.message}`, 'error');
+        if (submitBtn && fileInput.files[0]) submitBtn.disabled = false;
     }
 }
 
@@ -2296,9 +2434,9 @@ function showModal(modalId) {
         // Clear status messages when opening modals
         if (modalId === 'uploadModal') {
             clearStatus('uploadStatus');
-            // Also reset the form
             const uploadForm = document.getElementById('uploadForm');
             if (uploadForm) uploadForm.reset();
+            clearChartFileSelection();
         }
     }
 }
@@ -2312,6 +2450,7 @@ function hideModal(modalId) {
         // Clear status messages when closing modals
         if (modalId === 'uploadModal') {
             clearStatus('uploadStatus');
+            clearChartFileSelection();
         }
     }
 }

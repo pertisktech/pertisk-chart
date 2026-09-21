@@ -1725,3 +1725,180 @@ footer.app-footer {
   color: var(--accent) !important;
   font-weight: 600;
 }
+
+/* Modern chart upload file dropzone */
+.upload-modal {
+  max-width: 460px !important;
+  width: min(460px, calc(100vw - 32px)) !important;
+}
+
+.file-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 168px;
+  padding: 22px 18px;
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  outline: none;
+}
+
+.file-dropzone:hover,
+.file-dropzone:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+}
+
+.file-dropzone.is-dragging {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.file-dropzone.has-file {
+  border-style: solid;
+  border-color: var(--line);
+  background: var(--surface-raised);
+  cursor: default;
+  min-height: 88px;
+  padding: 14px 16px;
+  justify-content: flex-start;
+}
+
+.file-dropzone-input {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 0 !important;
+}
+
+.file-dropzone.has-file .file-dropzone-input {
+  pointer-events: none !important;
+}
+
+.file-dropzone-idle {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.file-dropzone-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  margin-bottom: 4px;
+}
+
+.file-dropzone-title {
+  margin: 0;
+  color: var(--copy);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.file-dropzone-title strong {
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.file-dropzone-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.file-dropzone-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.file-dropzone-selected[hidden] {
+  display: none !important;
+}
+
+.file-dropzone-file-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.file-dropzone-file-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-dropzone-file-name {
+  margin: 0;
+  color: var(--copy);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-dropzone-file-size {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.file-dropzone-clear {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.file-dropzone-clear:hover {
+  color: var(--copy);
+  background: var(--surface-hover);
+  border-color: color-mix(in srgb, var(--copy) 20%, var(--line));
+}
+
+.upload-modal .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.upload-modal .primary-button:disabled,
+.upload-modal .btn-primary:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}

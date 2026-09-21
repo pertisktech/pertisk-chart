@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap">
     <link rel="stylesheet" href="/static/css/app.css">
-    <link rel="stylesheet" href="/static/css/design.css?v=9">
+    <link rel="stylesheet" href="/static/css/design.css?v=10">
 </head>
 <body>
     <div id="app" class="shell app-shell dark">
@@ -637,21 +637,52 @@
 
         <!-- Upload Modal -->
         <div id="uploadModal" class="modal" style="display: none;">
-            <div class="modal-content">
+            <div class="modal-content upload-modal">
                 <div class="modal-header">
                     <h3>Upload Chart</h3>
-                    <button class="modal-close" id="closeModal">&times;</button>
+                    <button type="button" class="modal-close" id="closeModal" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="uploadForm" enctype="multipart/form-data">
                         <div class="form-group">
-                            <label for="chartFile" class="form-label">Select Chart Package (.tgz)</label>
-                            <input type="file" id="chartFile" name="chart" accept=".tgz" required class="form-input">
+                            <label class="form-label" for="chartFile">Chart package</label>
+                            <div class="file-dropzone" id="chartFileDropzone" tabindex="0" role="button" aria-controls="chartFile" aria-label="Select chart package">
+                                <input type="file" id="chartFile" name="chart" accept=".tgz,application/gzip,application/x-gzip,application/x-tar" required class="file-dropzone-input">
+                                <div class="file-dropzone-idle" id="chartFileIdle">
+                                    <span class="file-dropzone-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="28" height="28">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="17 8 12 3 7 8"></polyline>
+                                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                                        </svg>
+                                    </span>
+                                    <p class="file-dropzone-title">Drop your <strong>.tgz</strong> here</p>
+                                    <p class="file-dropzone-hint">or click to browse — Helm chart package only</p>
+                                </div>
+                                <div class="file-dropzone-selected" id="chartFileSelected" hidden>
+                                    <span class="file-dropzone-file-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                    </span>
+                                    <div class="file-dropzone-file-meta">
+                                        <p class="file-dropzone-file-name" id="chartFileName"></p>
+                                        <p class="file-dropzone-file-size" id="chartFileSize"></p>
+                                    </div>
+                                    <button type="button" class="file-dropzone-clear" id="chartFileClear" aria-label="Remove file">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div id="uploadStatus" class="upload-status"></div>
                         <div class="modal-actions">
-                            <button type="button" class="btn-secondary" id="cancelUpload">Cancel</button>
-                            <button type="submit" class="btn-primary">Upload</button>
+                            <button type="button" class="btn-secondary secondary-button" id="cancelUpload">Cancel</button>
+                            <button type="submit" class="btn-primary primary-button" id="uploadSubmitBtn" disabled>Upload</button>
                         </div>
                     </form>
                 </div>
@@ -663,6 +694,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/static/js/app.js?v=4.5"></script>
+    <script src="/static/js/app.js?v=4.6"></script>
 </body>
 </html>
