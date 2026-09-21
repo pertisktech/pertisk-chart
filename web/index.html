@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap">
     <link rel="stylesheet" href="/static/css/app.css">
-    <link rel="stylesheet" href="/static/css/design.css?v=7">
+    <link rel="stylesheet" href="/static/css/design.css?v=9">
 </head>
 <body>
     <div id="app" class="shell app-shell dark">
@@ -27,7 +27,10 @@
                             <path d="M7 14l4-4 3 3 5-6"></path>
                         </svg>
                     </span>
-                    <span class="brand-name">Pertisk <strong>Chart</strong></span>
+                    <span class="brand-text">
+                        <span class="brand-name">Pertisk <strong>Chart</strong></span>
+                        <span class="brand-version" id="appVersionLabel" aria-label="App version"></span>
+                    </span>
                 </a>
                 <button type="button" class="icon-button collapse-button" id="sidebarCollapseBtn" title="Collapse sidebar" aria-label="Collapse sidebar">
                     <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
@@ -660,6 +663,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/static/js/app.js?v=4.4"></script>
+    <script src="/static/js/app.js?v=4.5"></script>
 </body>
 </html>

@@ -18,6 +18,7 @@ import (
 	"github.com/pertisk-tech/pertisk-chart/pkg/auth"
 	"github.com/pertisk-tech/pertisk-chart/pkg/chart"
 	"github.com/pertisk-tech/pertisk-chart/pkg/storage"
+	"github.com/pertisk-tech/pertisk-chart/pkg/version"
 	"github.com/quic-go/quic-go/http3"
 	"gopkg.in/yaml.v3"
 )
@@ -227,7 +228,8 @@ func (s *Server) setupRoutes() {
 // handleHealth returns server health status
 func (s *Server) handleHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
+		"status":  "ok",
+		"version": version.Version,
 	})
 }
 
@@ -695,9 +697,9 @@ func (s *Server) getChartsList() ([]ChartInfo, error) {
 	// Convert map to slice and sort versions
 	var charts []ChartInfo
 	for _, ch := range chartsMap {
-		// Sort versions (newest first)
+		// Sort versions newest-first using numeric semver (0.2.10 > 0.2.6)
 		sort.Slice(ch.Versions, func(i, j int) bool {
-			return ch.Versions[i].Version > ch.Versions[j].Version
+			return chart.CompareVersions(ch.Versions[i].Version, ch.Versions[j].Version) > 0
 		})
 		charts = append(charts, *ch)
 	}

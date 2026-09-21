@@ -3,17 +3,18 @@
 VERSION ?= $(patsubst v%,%,$(shell git describe --tags --abbrev=0 2>/dev/null || echo 0.1.2))
 RELEASE ?= 1
 ALMA_VERSION ?= 9
+LDFLAGS := -s -w -X github.com/pertisk-tech/pertisk-chart/pkg/version.Version=$(VERSION)
 
 # Build the server
 build:
 	@echo "Building pertisk-chart..."
-	@go build -ldflags="-s -w" -o pertisk-chart ./cmd/server
+	@go build -ldflags="$(LDFLAGS)" -o pertisk-chart ./cmd/server
 	@echo "Build complete!"
 
 # Run the server
 run:
 	@echo "Running pertisk-chart..."
-	@go run ./cmd/server --debug --port=7080
+	@go run -ldflags="$(LDFLAGS)" ./cmd/server --debug --port=7080
 
 # Run with hot reload using Air
 run-dev:

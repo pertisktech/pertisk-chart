@@ -100,7 +100,7 @@ jobs:
           RUN mkdir -p /out
           RUN --mount=type=cache,target=/root/.cache/go-build \
               CGO_ENABLED=1 \
-              go build -a -buildvcs=false -ldflags='-s -w' -tags 'osusergo netgo' \
+              go build -a -buildvcs=false -ldflags="-s -w -X github.com/pertisk-tech/pertisk-chart/pkg/version.Version=${{ steps.version.outputs.VERSION }}" -tags 'osusergo netgo' \
               -o /out/\${BINARY_NAME}-linux-\$(go env GOARCH) ./cmd/server && \
               CGO_ENABLED=1 \
               go build -a -buildvcs=false -ldflags='-s -w' -tags 'osusergo netgo' \

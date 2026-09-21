@@ -33,7 +33,7 @@ export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org,direct
 export GOFLAGS="-buildvcs=false"
 
-go build -a -ldflags="-s -w" -tags "osusergo netgo" -o pertisk-chart ./cmd/server
+go build -a -ldflags="-s -w -X github.com/pertisk-tech/pertisk-chart/pkg/version.Version=%{version}" -tags "osusergo netgo" -o pertisk-chart ./cmd/server
 go build -a -ldflags="-s -w" -tags "osusergo netgo" -o pertisk-chart-create-admin ./cmd/create-admin
 
 %install

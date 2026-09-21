@@ -8,7 +8,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = ["--debug", "--port=7080"]
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/server"
+  cmd = "go build -ldflags='-X github.com/pertisk-tech/pertisk-chart/pkg/version.Version=dev' -o ./tmp/main ./cmd/server"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "chartstorage", "web/static"]
   exclude_file = []

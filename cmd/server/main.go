@@ -10,6 +10,7 @@ import (
 	"github.com/pertisk-tech/pertisk-chart/pkg/api"
 	"github.com/pertisk-tech/pertisk-chart/pkg/auth"
 	"github.com/pertisk-tech/pertisk-chart/pkg/storage"
+	"github.com/pertisk-tech/pertisk-chart/pkg/version"
 )
 
 func main() {
@@ -124,7 +125,7 @@ func main() {
 
 	// Start server
 	addr := fmt.Sprintf(":%s", *port)
-	log.Printf("Starting Pertisk Chart Server on %s", addr)
+	log.Printf("Starting Pertisk Chart Server %s on %s", version.Version, addr)
 	log.Printf("Storage backend: %s", *storageBackend)
 	log.Printf("Storage root: %s", *storageRootDir)
 	if *enableHTTP3 {

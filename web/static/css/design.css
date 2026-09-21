@@ -121,11 +121,34 @@ html[data-theme="light"] #app.app-shell {
   letter-spacing: -.02em !important;
   white-space: nowrap !important;
   color: var(--copy) !important;
+  line-height: 1.15 !important;
 }
 
 .brand-name strong {
   font-weight: 450 !important;
   color: var(--muted) !important;
+}
+
+.brand-text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  line-height: 1.1 !important;
+}
+
+.brand-version {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: .01em !important;
+  color: var(--muted-2) !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+.brand-version:empty {
+  display: none !important;
 }
 
 .icon-button,
@@ -771,6 +794,10 @@ html[data-theme="light"] .chart-symbol.amber { background: #fff0d7 !important; c
 
 .version-pill,
 .chart-card .version-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
   padding: 4px 7px !important;
   border-radius: 5px !important;
   color: var(--accent) !important;
@@ -778,6 +805,13 @@ html[data-theme="light"] .chart-symbol.amber { background: #fff0d7 !important; c
   font-weight: 650 !important;
   font-size: 10px !important;
   border: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.detail-meta-chip .version-pill {
+  align-self: flex-start !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
 }
 
 .updated { color: var(--muted-2) !important; font-size: 10px !important; }
@@ -873,10 +907,12 @@ footer.app-footer {
 
 /* collapsed sidebar labels */
 .sidebar.collapsed .brand-name,
+.sidebar.collapsed .brand-text,
 .sidebar.collapsed .sidebar-section-label,
 .sidebar.collapsed .sidebar-bottom,
 .sidebar.collapsed .nav-label,
 .sidebar.sidebar-collapsed .brand-name,
+.sidebar.sidebar-collapsed .brand-text,
 .sidebar.sidebar-collapsed .sidebar-section-label,
 .sidebar.sidebar-collapsed .sidebar-bottom,
 .sidebar.sidebar-collapsed .nav-label {
@@ -923,12 +959,18 @@ footer.app-footer {
     transform: translateX(0) !important;
   }
   .sidebar.open .brand-name,
+  .sidebar.open .brand-text,
   .sidebar.open .sidebar-section-label,
   .sidebar.open .sidebar-bottom,
   .sidebar.sidebar-open .brand-name,
+  .sidebar.sidebar-open .brand-text,
   .sidebar.sidebar-open .sidebar-section-label,
   .sidebar.sidebar-open .sidebar-bottom {
     display: block !important;
+  }
+  .sidebar.open .brand-text,
+  .sidebar.sidebar-open .brand-text {
+    display: flex !important;
   }
   .sidebar.open .nav-label,
   .sidebar.sidebar-open .nav-label { display: inline !important; }

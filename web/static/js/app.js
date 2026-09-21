@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     initializeTheme();
     setupEventListeners();
+    loadAppVersion();
     await checkAuth();
     
     // Load domain and repository configuration first (non-blocking)
@@ -87,6 +88,22 @@ async function initializeApp() {
             handleRoute(route, false);
         }
     });
+}
+
+async function loadAppVersion() {
+    const label = document.getElementById('appVersionLabel');
+    if (!label) return;
+    try {
+        const response = await fetch(`${API_BASE}/health`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.version) {
+            const ver = String(data.version).replace(/^v/i, '');
+            label.textContent = `v${ver}`;
+        }
+    } catch (error) {
+        // Non-critical — leave version blank
+    }
 }
 
 // Event Listeners
