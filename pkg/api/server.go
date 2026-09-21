@@ -221,7 +221,13 @@ func (s *Server) setupRoutes() {
 		if webDir == "" {
 			webDir = "./web"
 		}
-		c.File(filepath.Join(webDir, "index.html"))
+		indexPath := filepath.Join(webDir, "index.html")
+		// Prevent browsers/proxies from keeping a stale SPA shell after RPM upgrades.
+		// (rpmbuild can normalize file mtimes, which makes Last-Modified-based 304s stick.)
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+		c.File(indexPath)
 	})
 }
 

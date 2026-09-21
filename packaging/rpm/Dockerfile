@@ -7,11 +7,12 @@ FROM almalinux:${ALMA_VERSION} AS builder
 ARG GO_VERSION=1.21.13
 ARG VERSION=0.1.2
 ARG RELEASE=1
+ARG BUILD_DATE=unknown
 
 RUN dnf -y install \
         rpm-build rpmdevtools gcc make git tar gzip rsync \
         libcap shadow-utils systemd systemd-rpm-macros \
-        ca-certificates \
+        ca-certificates python3 \
     && dnf clean all
 
 RUN ARCH="$(uname -m)" \
@@ -32,7 +33,9 @@ ENV PATH=/usr/local/go/bin:$PATH \
 WORKDIR /src
 COPY . .
 
-RUN chmod +x packaging/rpm/build.sh packaging/pertisk-chart.sh \
+# BUILD_DATE changes every invocation so UI/version stamps are not served from a stale layer.
+RUN echo "Building pertisk-chart ${VERSION}-${RELEASE} (${BUILD_DATE})" \
+    && chmod +x packaging/rpm/build.sh packaging/pertisk-chart.sh \
         packaging/rpm/preinstall.sh packaging/rpm/postinstall.sh \
         packaging/rpm/preremove.sh \
     && VERSION="$VERSION" RELEASE="$RELEASE" ./packaging/rpm/build.sh \

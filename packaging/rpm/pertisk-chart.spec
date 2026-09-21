@@ -1,4 +1,8 @@
 %global debug_package %{nil}
+# Keep packaged file mtimes from the build so UI upgrades are not stuck on 304s.
+# Alma/rpm sets SOURCE_DATE_EPOCH from changelog and clamps all file mtimes.
+%global source_date_epoch_from_changelog 0
+%global _build_mtime_policy clamp_to_buildtime
 
 Name:           pertisk-chart
 Version:        %{?package_version}%{!?package_version:0.1.2}
@@ -51,6 +55,8 @@ install -m 0755 packaging/pertisk-chart.sh %{buildroot}%{_libexecdir}/%{name}
 install -m 0644 packaging/config.conf %{buildroot}%{_sysconfdir}/%{name}/config.conf
 install -m 0644 packaging/pertisk-chart.service %{buildroot}%{_unitdir}/%{name}.service
 cp -a web %{buildroot}%{_datadir}/%{name}/
+# Keep packaged UI mtimes fresh so clients don't stick on stale Last-Modified 304s.
+find %{buildroot}%{_datadir}/%{name}/web -type f -exec touch -m {} +
 
 %pre
 if ! getent group pertisk-chart >/dev/null 2>&1; then
@@ -113,5 +119,7 @@ fi
 %dir %attr(0750,pertisk-chart,pertisk-chart) %{_localstatedir}/log/%{name}
 
 %changelog
+* Mon Sep 21 2026 Pertisk Team <dev@pertisk.tech> - 0.1.1-1
+- Fix RPM UI cache/version stamping and SPA no-cache headers
 * Thu Aug 13 2026 Pertisk Team <dev@pertisk.tech> - 0.1.2-1
 - Add AlmaLinux RPM packaging with systemd service

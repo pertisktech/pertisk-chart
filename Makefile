@@ -51,6 +51,7 @@ rpm:
 		--build-arg VERSION=$(VERSION) \
 		--build-arg RELEASE=$(RELEASE) \
 		--build-arg ALMA_VERSION=$(ALMA_VERSION) \
+		--build-arg BUILD_DATE=$$(date -u +%Y%m%d%H%M%S) \
 		-f packaging/rpm/Dockerfile \
 		.
 	@echo ""

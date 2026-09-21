@@ -56,13 +56,53 @@ else
         -cf - . | tar -C "$TMPDIR/$TARNAME" -xf -
 fi
 
+# Ensure UI assets look "new" to Last-Modified caches after every package build.
+# Alma/rpmbuild can normalize mtimes; browsers then keep serving a stale SPA shell.
+stamp_web_assets() {
+    local web_root="$1"
+    local ver="$2"
+    local cache_token="${ver}-$(date -u +%Y%m%d%H%M%S)"
+    [ -d "$web_root" ] || return 0
+
+    if [ -f "$web_root/index.html" ]; then
+        # Bust CSS/JS query strings so upgraded RPMs pull fresh assets.
+        sed -i.bak -E \
+            -e "s|(design\\.css\\?v=)[^\"']+|\\1${cache_token}|g" \
+            -e "s|(app\\.js\\?v=)[^\"']+|\\1${cache_token}|g" \
+            "$web_root/index.html"
+        rm -f "$web_root/index.html.bak"
+
+        # Bake version into the sidebar label as an immediate fallback.
+        python3 - "$web_root/index.html" "$ver" <<'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+ver = sys.argv[2].lstrip("v")
+text = path.read_text()
+old = '<span class="brand-version" id="appVersionLabel" aria-label="App version"></span>'
+new = f'<span class="brand-version" id="appVersionLabel" aria-label="App version">v{ver}</span>'
+if old in text:
+    path.write_text(text.replace(old, new, 1))
+PY
+    fi
+
+    find "$web_root" -type f -exec touch -m {} +
+    mkdir -p "$web_root/static"
+    printf '%s\n' "$ver" > "$web_root/static/version.txt"
+}
+
+stamp_web_assets "$TMPDIR/$TARNAME/web" "$VERSION"
+
 tar -C "$TMPDIR" -czf "$TOPDIR/SOURCES/${TARNAME}.tar.gz" "$TARNAME"
 cp "$ROOT/packaging/rpm/pertisk-chart.spec" "$TOPDIR/SPECS/"
+
+# Avoid reproducible-build mtime clamping so upgraded UI files get fresh Last-Modified.
+unset SOURCE_DATE_EPOCH || true
 
 rpmbuild -ba \
     --define "_topdir $TOPDIR" \
     --define "package_version $VERSION" \
     --define "package_release $RELEASE" \
+    --define "source_date_epoch_from_changelog 0" \
     "$TOPDIR/SPECS/pertisk-chart.spec"
 
 mkdir -p "$ROOT/dist"
